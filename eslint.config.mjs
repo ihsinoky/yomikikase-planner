@@ -10,6 +10,11 @@ export default tseslint.config(
   ...tseslint.configs.recommended,
   eslintConfigPrettier,
   {
+    languageOptions: {
+      parserOptions: {
+        projectService: true,
+      },
+    },
     plugins: {
       react: reactPlugin,
       'react-hooks': reactHooksPlugin,
