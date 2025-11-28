@@ -31,7 +31,7 @@ jobs:
         run: npm run lint
 
       - name: Run tests
-        run: npm run test -- --ci
+        run: npm run test
 
       # Next.js やビルドがある場合
       - name: Build
