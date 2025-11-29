@@ -17,7 +17,10 @@ function generateSessionToken(): string {
 export async function createSessionValue(): Promise<string> {
   const token = generateSessionToken();
   const timestamp = Date.now();
-  const secret = process.env.AUTH_SECRET || 'dev-secret-please-change';
+  const secret = process.env.AUTH_SECRET;
+  if (!secret) {
+    throw new Error('AUTH_SECRET environment variable is not set');
+  }
 
   // Create a simple HMAC-like signature
   const encoder = new TextEncoder();
@@ -58,7 +61,10 @@ export async function verifySessionValue(sessionValue: string): Promise<boolean>
     return false;
   }
 
-  const secret = process.env.AUTH_SECRET || 'dev-secret-please-change';
+  const secret = process.env.AUTH_SECRET;
+  if (!secret) {
+    return false;
+  }
 
   // Verify signature
   const encoder = new TextEncoder();
