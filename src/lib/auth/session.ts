@@ -14,7 +14,7 @@ function generateSessionToken(): string {
  * Creates a signed session value
  * The session includes a timestamp and signature for validation
  */
-async function createSessionValue(): Promise<string> {
+export async function createSessionValue(): Promise<string> {
   const token = generateSessionToken();
   const timestamp = Date.now();
   const secret = process.env.AUTH_SECRET || 'dev-secret-please-change';
@@ -40,7 +40,7 @@ async function createSessionValue(): Promise<string> {
 /**
  * Verifies a session value
  */
-async function verifySessionValue(sessionValue: string): Promise<boolean> {
+export async function verifySessionValue(sessionValue: string): Promise<boolean> {
   const parts = sessionValue.split(':');
   if (parts.length !== 3) {
     return false;
