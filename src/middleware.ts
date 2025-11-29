@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-const SESSION_COOKIE_NAME = 'admin_session';
-const SESSION_MAX_AGE = 60 * 60 * 24 * 1000; // 24 hours in milliseconds
+import { SESSION_COOKIE_NAME, SESSION_MAX_AGE_MS } from '@/lib/auth/constants';
 
 // Routes that don't require authentication
 const PUBLIC_ROUTES = ['/admin/login', '/api/auth/login'];
@@ -20,7 +18,7 @@ async function verifySessionValue(sessionValue: string, secret: string): Promise
 
   // Check if session has expired
   const now = Date.now();
-  if (now - timestamp > SESSION_MAX_AGE) {
+  if (now - timestamp > SESSION_MAX_AGE_MS) {
     return false;
   }
 
