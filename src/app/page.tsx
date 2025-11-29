@@ -26,7 +26,6 @@ export default function Home() {
         alignItems: 'center',
         justifyContent: 'center',
         minHeight: '100vh',
-        fontFamily: 'sans-serif',
         backgroundColor: '#f5f5f5',
       }}
     >
