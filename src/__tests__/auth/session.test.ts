@@ -3,14 +3,19 @@
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { verifySessionValue, createSessionValue } from '@/lib/auth/session';
-import { SESSION_MAX_AGE_MS } from '@/lib/auth/constants';
+import { SESSION_MAX_AGE_MS, SESSION_COOKIE_NAME } from '@/lib/auth/constants';
+
+// Create mock functions that we can control
+const mockGet = vi.fn();
+const mockSet = vi.fn();
+const mockDelete = vi.fn();
 
 // Mock next/headers since we're testing in Node.js environment
 vi.mock('next/headers', () => ({
-  cookies: vi.fn(() => ({
-    get: vi.fn(),
-    set: vi.fn(),
-    delete: vi.fn(),
+  cookies: vi.fn(() => Promise.resolve({
+    get: mockGet,
+    set: mockSet,
+    delete: mockDelete,
   })),
 }));
 
@@ -177,5 +182,140 @@ describe('createSessionValue', () => {
     const sessionValue = await createSessionValue();
     const isValid = await verifySessionValue(sessionValue);
     expect(isValid).toBe(true);
+  });
+
+  it('should generate signature using HMAC-SHA256', async () => {
+    const sessionValue = await createSessionValue();
+    const parts = sessionValue.split(':');
+    const [token, timestamp, signature] = parts;
+
+    // Manually verify the signature was created with HMAC-SHA256
+    const encoder = new TextEncoder();
+    const secret = process.env.AUTH_SECRET || 'test-secret';
+    const data = encoder.encode(`${token}:${timestamp}`);
+    const key = await crypto.subtle.importKey(
+      'raw',
+      encoder.encode(secret),
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign']
+    );
+    const signatureBuffer = await crypto.subtle.sign('HMAC', key, data);
+    const expectedSignature = Array.from(new Uint8Array(signatureBuffer), (byte) =>
+      byte.toString(16).padStart(2, '0')
+    ).join('');
+
+    expect(signature).toBe(expectedSignature);
+  });
+});
+
+describe('isAuthenticated', () => {
+  const originalEnv = process.env;
+
+  beforeEach(() => {
+    vi.resetModules();
+    vi.clearAllMocks();
+    process.env = { ...originalEnv };
+    process.env.AUTH_SECRET = 'test-secret-for-testing';
+  });
+
+  afterEach(() => {
+    process.env = originalEnv;
+  });
+
+  it('should return true for valid sessions', async () => {
+    // Need to re-import after mocks are set up
+    const { isAuthenticated, createSessionValue } = await import('@/lib/auth/session');
+    
+    const validSession = await createSessionValue();
+    mockGet.mockReturnValue({ value: validSession });
+
+    const result = await isAuthenticated();
+    expect(result).toBe(true);
+    expect(mockGet).toHaveBeenCalledWith(SESSION_COOKIE_NAME);
+  });
+
+  it('should return false when session cookie does not exist', async () => {
+    const { isAuthenticated } = await import('@/lib/auth/session');
+    
+    mockGet.mockReturnValue(undefined);
+
+    const result = await isAuthenticated();
+    expect(result).toBe(false);
+    expect(mockGet).toHaveBeenCalledWith(SESSION_COOKIE_NAME);
+  });
+
+  it('should return false when session cookie value is empty', async () => {
+    const { isAuthenticated } = await import('@/lib/auth/session');
+    
+    mockGet.mockReturnValue({ value: '' });
+
+    const result = await isAuthenticated();
+    expect(result).toBe(false);
+  });
+
+  it('should return false when session cookie value is null', async () => {
+    const { isAuthenticated } = await import('@/lib/auth/session');
+    
+    mockGet.mockReturnValue({ value: null });
+
+    const result = await isAuthenticated();
+    expect(result).toBe(false);
+  });
+
+  it('should return false for invalid/expired sessions', async () => {
+    const { isAuthenticated } = await import('@/lib/auth/session');
+    
+    // Create an expired session
+    const token = 'a'.repeat(64);
+    const oldTimestamp = Date.now() - SESSION_MAX_AGE_MS - 1000;
+
+    const encoder = new TextEncoder();
+    const secret = process.env.AUTH_SECRET || 'test-secret';
+    const data = encoder.encode(`${token}:${oldTimestamp}`);
+    const key = await crypto.subtle.importKey(
+      'raw',
+      encoder.encode(secret),
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign']
+    );
+    const signatureBuffer = await crypto.subtle.sign('HMAC', key, data);
+    const signature = Array.from(new Uint8Array(signatureBuffer), (byte) =>
+      byte.toString(16).padStart(2, '0')
+    ).join('');
+
+    const expiredSession = `${token}:${oldTimestamp}:${signature}`;
+    mockGet.mockReturnValue({ value: expiredSession });
+
+    const result = await isAuthenticated();
+    expect(result).toBe(false);
+  });
+
+  it('should return false for sessions with invalid signature', async () => {
+    const { isAuthenticated, createSessionValue } = await import('@/lib/auth/session');
+    
+    const validSession = await createSessionValue();
+    const parts = validSession.split(':');
+    const tamperedSession = `${parts[0]}:${parts[1]}:invalidSignature`;
+    
+    mockGet.mockReturnValue({ value: tamperedSession });
+
+    const result = await isAuthenticated();
+    expect(result).toBe(false);
+  });
+
+  it('should correctly delegate to verifySessionValue', async () => {
+    const { isAuthenticated, createSessionValue, verifySessionValue } = await import('@/lib/auth/session');
+    
+    const validSession = await createSessionValue();
+    mockGet.mockReturnValue({ value: validSession });
+
+    // Verify that isAuthenticated returns the same result as verifySessionValue
+    const isAuthResult = await isAuthenticated();
+    const verifyResult = await verifySessionValue(validSession);
+    
+    expect(isAuthResult).toBe(verifyResult);
+    expect(isAuthResult).toBe(true);
   });
 });
