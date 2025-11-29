@@ -48,6 +48,9 @@ async function verifySessionValue(sessionValue: string): Promise<boolean> {
 
   const [token, timestampStr, providedSignature] = parts;
   const timestamp = parseInt(timestampStr, 10);
+  if (isNaN(timestamp)) {
+    return false;
+  }
 
   // Check if session has expired
   const now = Date.now();
