@@ -2,6 +2,18 @@ import { cookies } from 'next/headers';
 import { SESSION_COOKIE_NAME, SESSION_MAX_AGE_SECONDS, SESSION_MAX_AGE_MS } from './constants';
 
 /**
+ * Performs a constant-time string comparison to prevent timing attacks
+ */
+function timingSafeStringCompare(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let result = 0;
+  for (let i = 0; i < a.length; i++) {
+    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return result === 0;
+}
+
+/**
  * Generates a simple session token using crypto
  */
 function generateSessionToken(): string {
@@ -81,7 +93,7 @@ export async function verifySessionValue(sessionValue: string): Promise<boolean>
     byte.toString(16).padStart(2, '0')
   ).join('');
 
-  return providedSignature === expectedSignature;
+  return timingSafeStringCompare(providedSignature, expectedSignature);
 }
 
 /**
