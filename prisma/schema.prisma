@@ -1,0 +1,185 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// =============================================================================
+// 年度とユーザー
+// =============================================================================
+
+/// 年度マスタ
+model SchoolYear {
+  id        String   @id @default(uuid())
+  name      String // 例: "2025年度"
+  startDate DateTime @map("start_date")
+  endDate   DateTime @map("end_date")
+  isActive  Boolean  @default(false) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  userYearProfiles UserYearProfile[]
+  surveys          Survey[]
+  confirmedEvents  ConfirmedEvent[]
+
+  @@map("school_years")
+}
+
+/// ユーザー（保護者）
+model User {
+  id          String   @id @default(uuid())
+  lineUserId  String   @unique @map("line_user_id")
+  displayName String?  @map("display_name")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  userYearProfiles      UserYearProfile[]
+  responses             Response[]
+  confirmedParticipants ConfirmedParticipant[]
+
+  @@map("users")
+}
+
+/// ユーザー年度別プロフィール
+model UserYearProfile {
+  id           String   @id @default(uuid())
+  userId       String   @map("user_id")
+  schoolYearId String   @map("school_year_id")
+  grade        Grade
+  className    String?  @map("class_name")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  schoolYear SchoolYear @relation(fields: [schoolYearId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, schoolYearId])
+  @@map("user_year_profiles")
+}
+
+/// 学年（年少/年中/年長）
+enum Grade {
+  JUNIOR // 年少
+  MIDDLE // 年中
+  SENIOR // 年長
+
+  @@map("grade")
+}
+
+// =============================================================================
+// アンケート
+// =============================================================================
+
+/// アンケート
+model Survey {
+  id           String   @id @default(uuid())
+  schoolYearId String   @map("school_year_id")
+  title        String
+  description  String?
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  schoolYear  SchoolYear   @relation(fields: [schoolYearId], references: [id], onDelete: Cascade)
+  surveyDates SurveyDate[]
+  responses   Response[]
+
+  @@map("surveys")
+}
+
+/// アンケート候補日
+model SurveyDate {
+  id        String   @id @default(uuid())
+  surveyId  String   @map("survey_id")
+  date      DateTime
+  grade     Grade
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  survey          Survey           @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+  responseDetails ResponseDetail[]
+
+  @@map("survey_dates")
+}
+
+/// アンケート回答
+model Response {
+  id        String   @id @default(uuid())
+  surveyId  String   @map("survey_id")
+  userId    String   @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  survey          Survey           @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  responseDetails ResponseDetail[]
+
+  @@unique([surveyId, userId])
+  @@map("responses")
+}
+
+/// アンケート回答詳細
+model ResponseDetail {
+  id           String         @id @default(uuid())
+  responseId   String         @map("response_id")
+  surveyDateId String         @map("survey_date_id")
+  status       ResponseStatus
+  createdAt    DateTime       @default(now()) @map("created_at")
+  updatedAt    DateTime       @updatedAt @map("updated_at")
+
+  response   Response   @relation(fields: [responseId], references: [id], onDelete: Cascade)
+  surveyDate SurveyDate @relation(fields: [surveyDateId], references: [id], onDelete: Cascade)
+
+  @@unique([responseId, surveyDateId])
+  @@map("response_details")
+}
+
+/// 回答ステータス（参加可/参加不可）
+enum ResponseStatus {
+  AVAILABLE // 参加可
+  UNAVAILABLE // 参加不可
+
+  @@map("response_status")
+}
+
+// =============================================================================
+// 確定日程
+// =============================================================================
+
+/// 確定イベント
+model ConfirmedEvent {
+  id           String   @id @default(uuid())
+  schoolYearId String   @map("school_year_id")
+  date         DateTime
+  grade        Grade
+  className    String?  @map("class_name")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  schoolYear   SchoolYear             @relation(fields: [schoolYearId], references: [id], onDelete: Cascade)
+  participants ConfirmedParticipant[]
+
+  @@map("confirmed_events")
+}
+
+/// 確定参加者
+model ConfirmedParticipant {
+  id               String   @id @default(uuid())
+  confirmedEventId String   @map("confirmed_event_id")
+  userId           String?  @map("user_id")
+  participantName  String?  @map("participant_name")
+  grade            Grade?
+  className        String?  @map("class_name")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  confirmedEvent ConfirmedEvent @relation(fields: [confirmedEventId], references: [id], onDelete: Cascade)
+  user           User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("confirmed_participants")
+}
