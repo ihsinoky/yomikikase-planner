@@ -319,3 +319,109 @@ describe('isAuthenticated', () => {
     expect(isAuthResult).toBe(true);
   });
 });
+
+describe('createSession', () => {
+  const originalEnv = process.env;
+
+  beforeEach(() => {
+    vi.resetModules();
+    vi.clearAllMocks();
+    process.env = { ...originalEnv };
+    process.env.AUTH_SECRET = 'test-secret-for-testing';
+  });
+
+  afterEach(() => {
+    process.env = originalEnv;
+  });
+
+  it('should create session cookie with correct name', async () => {
+    const { createSession } = await import('@/lib/auth/session');
+    
+    await createSession();
+    
+    expect(mockSet).toHaveBeenCalledTimes(1);
+    expect(mockSet.mock.calls[0][0]).toBe(SESSION_COOKIE_NAME);
+  });
+
+  it('should create session cookie with httpOnly attribute', async () => {
+    const { createSession } = await import('@/lib/auth/session');
+    
+    await createSession();
+    
+    const cookieOptions = mockSet.mock.calls[0][2];
+    expect(cookieOptions.httpOnly).toBe(true);
+  });
+
+  it('should create session cookie with sameSite lax attribute', async () => {
+    const { createSession } = await import('@/lib/auth/session');
+    
+    await createSession();
+    
+    const cookieOptions = mockSet.mock.calls[0][2];
+    expect(cookieOptions.sameSite).toBe('lax');
+  });
+
+  it('should create session cookie with correct maxAge', async () => {
+    const { createSession } = await import('@/lib/auth/session');
+    const { SESSION_MAX_AGE_SECONDS } = await import('@/lib/auth/constants');
+    
+    await createSession();
+    
+    const cookieOptions = mockSet.mock.calls[0][2];
+    expect(cookieOptions.maxAge).toBe(SESSION_MAX_AGE_SECONDS);
+  });
+
+  it('should create session cookie with path set to root', async () => {
+    const { createSession } = await import('@/lib/auth/session');
+    
+    await createSession();
+    
+    const cookieOptions = mockSet.mock.calls[0][2];
+    expect(cookieOptions.path).toBe('/');
+  });
+
+  it('should set secure attribute to false in non-production environment', async () => {
+    process.env.NODE_ENV = 'development';
+    const { createSession } = await import('@/lib/auth/session');
+    
+    await createSession();
+    
+    const cookieOptions = mockSet.mock.calls[0][2];
+    expect(cookieOptions.secure).toBe(false);
+  });
+
+  it('should set secure attribute to true in production environment', async () => {
+    process.env.NODE_ENV = 'production';
+    const { createSession } = await import('@/lib/auth/session');
+    
+    await createSession();
+    
+    const cookieOptions = mockSet.mock.calls[0][2];
+    expect(cookieOptions.secure).toBe(true);
+  });
+
+  it('should create session value in correct format (token:timestamp:signature)', async () => {
+    const { createSession } = await import('@/lib/auth/session');
+    
+    await createSession();
+    
+    const sessionValue = mockSet.mock.calls[0][1];
+    const parts = sessionValue.split(':');
+    
+    expect(parts.length).toBe(3);
+    expect(parts[0].length).toBe(64); // 32 bytes = 64 hex chars for token
+    expect(parseInt(parts[1], 10)).toBeGreaterThan(0); // Valid timestamp
+    expect(parts[2].length).toBe(64); // HMAC-SHA256 = 32 bytes = 64 hex chars
+  });
+
+  it('should create verifiable session value', async () => {
+    const { createSession, verifySessionValue } = await import('@/lib/auth/session');
+    
+    await createSession();
+    
+    const sessionValue = mockSet.mock.calls[0][1];
+    const isValid = await verifySessionValue(sessionValue);
+    
+    expect(isValid).toBe(true);
+  });
+});
