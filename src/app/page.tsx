@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import Link from 'next/link';
 
 export default function Home() {
   const router = useRouter();
@@ -53,12 +54,35 @@ export default function Home() {
         </button>
       </div>
       <h1 style={{ color: '#333', marginBottom: '16px' }}>読み聞かせプランナー</h1>
-      <h2 style={{ color: '#666', fontWeight: 'normal', marginBottom: '24px' }}>
-        管理画面（仮）
-      </h2>
-      <p style={{ color: '#888' }}>
+      <h2 style={{ color: '#666', fontWeight: 'normal', marginBottom: '24px' }}>管理画面</h2>
+      <p style={{ color: '#888', marginBottom: '32px' }}>
         幼稚園の「絵本読み聞かせ」活動を支援するアプリケーションです
       </p>
+
+      <div
+        style={{
+          display: 'flex',
+          gap: '16px',
+          flexWrap: 'wrap',
+          justifyContent: 'center',
+        }}
+      >
+        <Link
+          href="/admin/surveys"
+          style={{
+            padding: '16px 32px',
+            backgroundColor: '#1976d2',
+            color: 'white',
+            textDecoration: 'none',
+            borderRadius: '8px',
+            fontSize: '16px',
+            fontWeight: '500',
+            boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+          }}
+        >
+          📋 アンケート管理
+        </Link>
+      </div>
     </main>
   );
 }
