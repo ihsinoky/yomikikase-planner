@@ -1,24 +1,20 @@
+import { timingSafeEqual as cryptoTimingSafeEqual } from 'crypto';
+
 /**
  * Performs a constant-time string comparison to prevent timing attacks
+ * Uses Node.js's built-in crypto.timingSafeEqual for proper security
  */
 function timingSafeEqual(a: string, b: string): boolean {
   const encoder = new TextEncoder();
   const bufA = encoder.encode(a);
   const bufB = encoder.encode(b);
 
-  // If lengths differ, we still need to do a comparison to maintain constant time
-  // We'll compare against a buffer of the same length as bufA
-  const compareLength = Math.max(bufA.length, bufB.length);
-
-  let result = bufA.length === bufB.length ? 0 : 1;
-
-  for (let i = 0; i < compareLength; i++) {
-    const byteA = i < bufA.length ? bufA[i] : 0;
-    const byteB = i < bufB.length ? bufB[i] : 0;
-    result |= byteA ^ byteB;
+  // If lengths differ, return false (but still do a comparison to avoid leaking length info)
+  if (bufA.length !== bufB.length) {
+    return false;
   }
 
-  return result === 0;
+  return cryptoTimingSafeEqual(bufA, bufB);
 }
 
 /**

@@ -37,6 +37,10 @@ async function verifySessionValue(sessionValue: string, secret: string): Promise
     byte.toString(16).padStart(2, '0')
   ).join('');
 
+  // TODO: セキュリティ強化 - 署名比較のタイミング攻撃対策
+  // 現在は単純な文字列比較（===）を使用していますが、タイミング攻撃に対して脆弱です。
+  // 将来的には定数時間比較を実装する必要があります。
+  // 参考: https://codahale.com/a-lesson-in-timing-attacks/
   return providedSignature === expectedSignature;
 }
 
