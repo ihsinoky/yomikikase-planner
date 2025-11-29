@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '指定された年度が見つかりません' }, { status: 400 });
     }
 
-    // Create survey with survey dates in a transaction
+    // Create survey with survey dates using nested create (Prisma handles this atomically)
     const survey = await prisma.survey.create({
       data: {
         schoolYearId,
