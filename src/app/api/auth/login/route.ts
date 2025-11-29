@@ -12,7 +12,12 @@ export async function POST(request: NextRequest) {
 
     const { username, password } = body;
 
-    if (!username || !password) {
+    if (
+      !username ||
+      !password ||
+      username.trim().length === 0 ||
+      password.trim().length === 0
+    ) {
       return NextResponse.json({ error: 'ユーザー名とパスワードを入力してください' }, { status: 400 });
     }
 
