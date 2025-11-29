@@ -62,7 +62,11 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/admin/login', request.url));
   }
 
-  const secret = process.env.AUTH_SECRET || 'dev-secret-please-change';
+  const secret = process.env.AUTH_SECRET;
+  if (!secret) {
+    console.error('AUTH_SECRET environment variable is not set');
+    return NextResponse.redirect(new URL('/admin/login', request.url));
+  }
   const isValid = await verifySessionValue(sessionCookie.value, secret);
 
   if (!isValid) {
