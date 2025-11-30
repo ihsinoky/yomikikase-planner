@@ -169,8 +169,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const sanitizeFilename = (str: string): string => {
       return str
         .replace(/[\s]+/g, '_')
-        .replace(/[/\\:*?"<>|]/g, '')
-        .replace(/[^\w\-_.（）()]/g, '');
+        .replace(/[/\\:*?"<>|]/g, '');
     };
     const schoolYearName = sanitizeFilename(survey.schoolYear.name);
     const surveyTitle = sanitizeFilename(survey.title);
