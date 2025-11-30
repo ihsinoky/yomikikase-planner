@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { Grade } from '@prisma/client';
+import type { Grade } from '@prisma/client';
+
+const VALID_GRADES: Grade[] = ['JUNIOR', 'MIDDLE', 'SENIOR'];
 
 interface SurveyDateInput {
   date: string; // ISO 8601 format
@@ -69,7 +71,11 @@ export async function POST(request: NextRequest) {
       if (!surveyDate.date) {
         return NextResponse.json({ error: '候補日の日付を入力してください' }, { status: 400 });
       }
-      if (!surveyDate.grade || !Object.values(Grade).includes(surveyDate.grade)) {
+      const parsedDate = new Date(surveyDate.date);
+      if (Number.isNaN(parsedDate.getTime())) {
+        return NextResponse.json({ error: '候補日の日付形式が不正です' }, { status: 400 });
+      }
+      if (!surveyDate.grade || !VALID_GRADES.includes(surveyDate.grade)) {
         return NextResponse.json({ error: '候補日の対象学年を選択してください' }, { status: 400 });
       }
     }
