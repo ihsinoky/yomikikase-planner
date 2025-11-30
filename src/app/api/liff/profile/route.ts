@@ -39,7 +39,8 @@ export async function POST(request: NextRequest) {
     let lineUserInfo;
     try {
       lineUserInfo = await verifyIdToken(body.idToken);
-    } catch {
+    } catch (error) {
+      console.error('ID token verification failed:', error instanceof Error ? error.message : error);
       return NextResponse.json({ error: '認証に失敗しました' }, { status: 401 });
     }
 
@@ -133,7 +134,8 @@ export async function GET(request: NextRequest) {
     let lineUserInfo;
     try {
       lineUserInfo = await verifyIdToken(idToken);
-    } catch {
+    } catch (error) {
+      console.error('ID token verification failed:', error instanceof Error ? error.message : error);
       return NextResponse.json({ error: '認証に失敗しました' }, { status: 401 });
     }
 

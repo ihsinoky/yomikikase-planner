@@ -26,7 +26,8 @@ export async function POST(request: NextRequest) {
     let lineUserInfo;
     try {
       lineUserInfo = await verifyIdToken(body.idToken);
-    } catch {
+    } catch (error) {
+      console.error('LIFF token verification error:', error instanceof Error ? error.message : error);
       return NextResponse.json({ error: '認証に失敗しました' }, { status: 401 });
     }
 

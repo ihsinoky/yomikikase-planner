@@ -6,6 +6,7 @@ import liff from '@line/liff';
 type Grade = 'JUNIOR' | 'MIDDLE' | 'SENIOR';
 
 interface UserProfile {
+  id: string;
   grade: Grade;
   className: string | null;
   schoolYear: {
