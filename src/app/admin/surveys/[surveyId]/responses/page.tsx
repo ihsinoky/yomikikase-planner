@@ -164,7 +164,7 @@ export default function SurveyResponsesPage() {
       }
 
       const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('text/csv')) {
+      if (!contentType || !contentType.includes('csv')) {
         setError('セッションが切れました。再度ログインしてください。');
         router.push('/admin/login');
         return;
