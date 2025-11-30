@@ -138,11 +138,15 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const csvLines: string[] = [];
 
     // Header row: user_name, grade, class_name, date1_status, date2_status, ...
-    const headerColumns = ['user_name', 'grade', 'class_name'];
+    const headerColumns = [
+      escapeCSV('user_name'),
+      escapeCSV('grade'),
+      escapeCSV('class_name'),
+    ];
     for (const surveyDate of survey.surveyDates) {
       const dateStr = formatDate(surveyDate.date);
       const gradeLabel = GRADE_LABELS[surveyDate.grade];
-      headerColumns.push(`${dateStr}_${gradeLabel}`);
+      headerColumns.push(escapeCSV(`${dateStr}_${gradeLabel}`));
     }
     csvLines.push(headerColumns.join(','));
 
