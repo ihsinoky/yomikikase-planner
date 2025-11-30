@@ -165,8 +165,15 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const csvContent = csvLines.join('\n');
 
     // Generate filename with school year and survey title
-    const schoolYearName = survey.schoolYear.name.replace(/\s+/g, '_');
-    const surveyTitle = survey.title.replace(/\s+/g, '_');
+    // Sanitize filename by removing potentially problematic characters
+    const sanitizeFilename = (str: string): string => {
+      return str
+        .replace(/[\s]+/g, '_')
+        .replace(/[/\\:*?"<>|]/g, '')
+        .replace(/[^\w\-_.（）()]/g, '');
+    };
+    const schoolYearName = sanitizeFilename(survey.schoolYear.name);
+    const surveyTitle = sanitizeFilename(survey.title);
     const filename = `${schoolYearName}_${surveyTitle}_responses.csv`;
 
     // Return CSV file with BOM for Excel compatibility

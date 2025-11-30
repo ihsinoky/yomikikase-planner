@@ -130,7 +130,8 @@ export default function SurveyResponsesPage() {
         .filter((c): c is string => c !== null)
       )].sort();
       setAvailableClasses(classes);
-    } catch {
+    } catch (err) {
+      console.error('Failed to fetch responses:', err);
       setError('回答の取得に失敗しました');
     } finally {
       setIsLoading(false);
@@ -182,7 +183,8 @@ export default function SurveyResponsesPage() {
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(downloadUrl);
-    } catch {
+    } catch (err) {
+      console.error('Failed to export CSV:', err);
       setError('CSVのダウンロードに失敗しました');
     } finally {
       setIsExporting(false);
