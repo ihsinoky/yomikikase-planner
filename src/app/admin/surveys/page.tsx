@@ -235,6 +235,16 @@ export default function SurveyListPage() {
                   >
                     作成日
                   </th>
+                  <th
+                    style={{
+                      padding: '16px',
+                      textAlign: 'left',
+                      fontWeight: '500',
+                      color: '#666',
+                    }}
+                  >
+                    操作
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -276,6 +286,25 @@ export default function SurveyListPage() {
                       }}
                     >
                       {formatDate(survey.createdAt)}
+                    </td>
+                    <td
+                      style={{
+                        padding: '16px',
+                      }}
+                    >
+                      <Link
+                        href={`/admin/surveys/${survey.id}/responses`}
+                        style={{
+                          padding: '8px 16px',
+                          backgroundColor: '#e3f2fd',
+                          color: '#1976d2',
+                          textDecoration: 'none',
+                          borderRadius: '4px',
+                          fontSize: '13px',
+                        }}
+                      >
+                        回答を見る
+                      </Link>
                     </td>
                   </tr>
                 ))}
