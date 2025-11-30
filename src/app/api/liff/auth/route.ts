@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
       where: { isActive: true },
     });
 
-    let hasCurrentYearProfile = false;
+    let profile = null;
     if (activeSchoolYear) {
       const existingProfile = await prisma.userYearProfile.findUnique({
         where: {
@@ -60,19 +60,33 @@ export async function POST(request: NextRequest) {
             schoolYearId: activeSchoolYear.id,
           },
         },
+        include: {
+          schoolYear: true,
+        },
       });
-      hasCurrentYearProfile = !!existingProfile;
+      if (existingProfile) {
+        profile = {
+          id: existingProfile.id,
+          grade: existingProfile.grade,
+          className: existingProfile.className,
+          schoolYear: {
+            id: existingProfile.schoolYear.id,
+            name: existingProfile.schoolYear.name,
+          },
+        };
+      }
     }
 
     return NextResponse.json({
       userId: user.id,
       displayName: user.displayName,
       isNewUser,
-      hasCurrentYearProfile,
+      hasCurrentYearProfile: !!profile,
       activeSchoolYearId: activeSchoolYear?.id ?? null,
+      profile,
     });
-  } catch {
-    console.error('LIFF authentication error');
+  } catch (error) {
+    console.error('LIFF authentication error:', error instanceof Error ? error.message : error);
     return NextResponse.json({ error: '認証処理中にエラーが発生しました' }, { status: 500 });
   }
 }

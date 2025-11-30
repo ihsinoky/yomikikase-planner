@@ -41,13 +41,17 @@ describe('verifyIdToken', () => {
       displayName: 'Test User',
     });
 
-    expect(global.fetch).toHaveBeenCalledWith('https://api.line.me/oauth2/v2.1/verify', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: expect.any(URLSearchParams),
-    });
+    expect(global.fetch).toHaveBeenCalledWith(
+      'https://api.line.me/oauth2/v2.1/verify',
+      expect.objectContaining({
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: expect.any(URLSearchParams),
+        signal: expect.any(AbortSignal),
+      })
+    );
   });
 
   it('should return user info without display name if not provided', async () => {

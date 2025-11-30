@@ -41,33 +41,42 @@ export async function verifyIdToken(idToken: string): Promise<LineUserInfo> {
     throw new Error('LINE_CHANNEL_ID environment variable is not set');
   }
 
-  const response = await fetch('https://api.line.me/oauth2/v2.1/verify', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    body: new URLSearchParams({
-      id_token: idToken,
-      client_id: channelId,
-    }),
-  });
+  // Set up request timeout to prevent hanging requests
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
 
-  if (!response.ok) {
-    const errorData = (await response.json()) as LineErrorResponse;
-    throw new Error(
-      errorData.error_description || errorData.error || 'Failed to verify LINE ID token'
-    );
+  try {
+    const response = await fetch('https://api.line.me/oauth2/v2.1/verify', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        id_token: idToken,
+        client_id: channelId,
+      }),
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      const errorData = (await response.json()) as LineErrorResponse;
+      throw new Error(
+        errorData.error_description || errorData.error || 'Failed to verify LINE ID token'
+      );
+    }
+
+    const data = (await response.json()) as LineVerifyResponse;
+
+    // Verify that the audience matches our channel ID
+    if (data.aud !== channelId) {
+      throw new Error('Token was not issued for this channel');
+    }
+
+    return {
+      lineUserId: data.sub,
+      displayName: data.name,
+    };
+  } finally {
+    clearTimeout(timeoutId);
   }
-
-  const data = (await response.json()) as LineVerifyResponse;
-
-  // Verify that the audience matches our channel ID
-  if (data.aud !== channelId) {
-    throw new Error('Token was not issued for this channel');
-  }
-
-  return {
-    lineUserId: data.sub,
-    displayName: data.name,
-  };
 }

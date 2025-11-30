@@ -19,6 +19,7 @@ interface AuthResponse {
   displayName: string | null;
   hasCurrentYearProfile: boolean;
   activeSchoolYearId: string | null;
+  profile: UserProfile | null;
 }
 
 interface ProfileResponse {
@@ -99,15 +100,11 @@ export default function LiffPage() {
         return;
       }
 
-      // If user already has a profile, fetch and display it
-      if (authData.hasCurrentYearProfile) {
-        const profileResponse = await fetch(`/api/liff/profile?idToken=${encodeURIComponent(idToken)}`);
-        if (profileResponse.ok) {
-          const profileData: ProfileResponse = await profileResponse.json();
-          setHasProfile(true);
-          setUserProfile(profileData.profile);
-          setUserDisplayName(profileData.displayName);
-        }
+      // If user already has a profile, display it directly from auth response
+      if (authData.hasCurrentYearProfile && authData.profile) {
+        setHasProfile(true);
+        setUserProfile(authData.profile);
+        setUserDisplayName(authData.displayName);
       } else {
         // Pre-fill display name from LINE profile if available
         if (authData.displayName) {

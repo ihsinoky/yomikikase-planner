@@ -109,8 +109,8 @@ export async function POST(request: NextRequest) {
         },
       },
     });
-  } catch {
-    console.error('Profile registration error');
+  } catch (error) {
+    console.error('Profile registration error:', error instanceof Error ? error.message : error);
     return NextResponse.json({ error: 'プロフィール登録中にエラーが発生しました' }, { status: 500 });
   }
 }
@@ -187,8 +187,8 @@ export async function GET(request: NextRequest) {
           }
         : null,
     });
-  } catch {
-    console.error('Get profile error');
+  } catch (error) {
+    console.error('Get profile error:', error instanceof Error ? error.message : error);
     return NextResponse.json({ error: 'プロフィール取得中にエラーが発生しました' }, { status: 500 });
   }
 }

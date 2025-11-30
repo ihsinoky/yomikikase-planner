@@ -100,6 +100,7 @@ describe('POST /api/liff/auth', () => {
     expect(data.isNewUser).toBe(true);
     expect(data.hasCurrentYearProfile).toBe(false);
     expect(data.activeSchoolYearId).toBe('year-1');
+    expect(data.profile).toBe(null);
   });
 
   it('should return existing user when user already exists', async () => {
@@ -174,6 +175,7 @@ describe('POST /api/liff/auth', () => {
       className: 'さくら組',
       createdAt: new Date(),
       updatedAt: new Date(),
+      schoolYear: mockSchoolYear,
     };
     vi.mocked(prisma.userYearProfile.findUnique).mockResolvedValue(mockProfile);
 
@@ -183,6 +185,15 @@ describe('POST /api/liff/auth', () => {
 
     expect(response.status).toBe(200);
     expect(data.hasCurrentYearProfile).toBe(true);
+    expect(data.profile).toEqual({
+      id: 'profile-1',
+      grade: 'JUNIOR',
+      className: 'さくら組',
+      schoolYear: {
+        id: 'year-1',
+        name: '2025年度',
+      },
+    });
   });
 
   it('should return null activeSchoolYearId when no active school year', async () => {
