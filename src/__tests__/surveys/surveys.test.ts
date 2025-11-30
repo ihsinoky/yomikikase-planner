@@ -144,6 +144,20 @@ describe('POST /api/surveys', () => {
     expect(data.error).toBe('候補日の日付を入力してください');
   });
 
+  it('should return 400 when surveyDate has invalid date format', async () => {
+    const request = createMockRequest({
+      schoolYearId: 'year-1',
+      title: 'Test Survey',
+      surveyDates: [{ date: 'invalid-date', grade: 'JUNIOR' }],
+    });
+
+    const response = await POST(request);
+    const data = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(data.error).toBe('候補日の日付形式が不正です');
+  });
+
   it('should return 400 when surveyDate has invalid grade', async () => {
     const request = createMockRequest({
       schoolYearId: 'year-1',
