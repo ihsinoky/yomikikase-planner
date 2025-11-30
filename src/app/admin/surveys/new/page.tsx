@@ -3,14 +3,12 @@
 import { useEffect, useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { Grade } from '@prisma/client';
 
 interface SchoolYear {
   id: string;
   name: string;
 }
-
-type Grade = 'JUNIOR' | 'MIDDLE' | 'SENIOR';
-
 interface SurveyDateRow {
   id: number; // Temporary ID for React key
   date: string;
