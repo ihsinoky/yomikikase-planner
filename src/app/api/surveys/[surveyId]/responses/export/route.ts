@@ -154,7 +154,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     for (const response of filteredResponses) {
       const rowValues: string[] = [
         escapeCSV(response.userName),
-        response.grade ? GRADE_LABELS[response.grade] : '',
+        escapeCSV(response.grade ? GRADE_LABELS[response.grade] : ''),
         escapeCSV(response.className),
       ];
 
