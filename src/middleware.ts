@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { SESSION_COOKIE_NAME, SESSION_MAX_AGE_MS } from '@/lib/auth/constants';
 
 // Routes that don't require authentication
-const PUBLIC_ROUTES = ['/admin/login', '/api/auth/login', '/api/auth/logout'];
+const PUBLIC_ROUTES = ['/admin/login', '/api/auth/login', '/api/auth/logout', '/liff', '/api/liff'];
 
 /**
  * Verifies a session value in middleware context (using Edge runtime crypto)
