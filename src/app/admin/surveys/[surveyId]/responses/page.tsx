@@ -157,6 +157,19 @@ export default function SurveyResponsesPage() {
       const url = `/api/surveys/${surveyId}/responses/export${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
       const response = await fetch(url);
 
+      // Handle redirect (session expired) or non-CSV response
+      if (response.redirected) {
+        router.push('/admin/login');
+        return;
+      }
+
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('text/csv')) {
+        setError('セッションが切れました。再度ログインしてください。');
+        router.push('/admin/login');
+        return;
+      }
+
       if (!response.ok) {
         throw new Error('Export failed');
       }
