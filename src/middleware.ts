@@ -52,8 +52,11 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Check if we're accessing protected routes (admin pages or root)
-  const isProtectedRoute = pathname === '/' || pathname.startsWith('/admin');
+  // Check if we're accessing protected routes (admin pages, root, or protected API routes)
+  const isProtectedApiRoute = 
+    pathname.startsWith('/api/school-years') || 
+    pathname.match(/^\/api\/surveys\/[^/]+\/responses/);
+  const isProtectedRoute = pathname === '/' || pathname.startsWith('/admin') || isProtectedApiRoute;
 
   if (!isProtectedRoute) {
     return NextResponse.next();
