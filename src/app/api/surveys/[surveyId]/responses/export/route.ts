@@ -156,7 +156,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
       for (const surveyDate of survey.surveyDates) {
         const status = response.statusMap.get(surveyDate.id);
-        rowValues.push(status ? STATUS_LABELS[status] : '');
+        rowValues.push(escapeCSV(status ? STATUS_LABELS[status] : ''));
       }
 
       csvLines.push(rowValues.join(','));
