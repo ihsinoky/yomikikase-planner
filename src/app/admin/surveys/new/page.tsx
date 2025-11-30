@@ -8,6 +8,8 @@ import { Grade } from '@prisma/client';
 interface SchoolYear {
   id: string;
   name: string;
+  startDate: string;
+  endDate: string;
 }
 interface SurveyDateRow {
   id: number; // Temporary ID for React key
@@ -41,6 +43,20 @@ export default function NewSurveyPage() {
     const fetchSchoolYears = async () => {
       try {
         const response = await fetch('/api/school-years');
+
+        // Handle redirect (session expired) or non-JSON response
+        if (response.redirected) {
+          router.push('/admin/login');
+          return;
+        }
+
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          setError('セッションが切れました。再度ログインしてください。');
+          router.push('/admin/login');
+          return;
+        }
+
         if (!response.ok) {
           throw new Error('Failed to fetch school years');
         }
@@ -58,7 +74,7 @@ export default function NewSurveyPage() {
     };
 
     fetchSchoolYears();
-  }, []);
+  }, [router]);
 
   const handleAddRow = () => {
     setSurveyDates([...surveyDates, { id: nextRowId, date: '', grade: '' }]);
@@ -88,8 +104,20 @@ export default function NewSurveyPage() {
     setError(null);
     setIsSubmitting(true);
 
-    // Filter out empty rows and validate
+    // Validate all rows - check for partially filled rows
+    const partialRows = surveyDates.filter(
+      (row) => (row.date && !row.grade) || (!row.date && row.grade)
+    );
     const validDates = surveyDates.filter((row) => row.date && row.grade);
+
+    // Don't allow partial rows - user must complete or clear them
+    if (partialRows.length > 0) {
+      setError('開催候補日の日付と対象学年を両方入力してください。不要な行は削除してください。');
+      setIsSubmitting(false);
+      return;
+    }
+
+    // Must have at least one valid date (allow empty rows to be ignored)
     if (validDates.length === 0) {
       setError('開催候補日を1つ以上追加してください');
       setIsSubmitting(false);
@@ -105,13 +133,26 @@ export default function NewSurveyPage() {
         body: JSON.stringify({
           schoolYearId,
           title,
-          description: description || undefined,
+          description: description || null,
           surveyDates: validDates.map((row) => ({
             date: row.date,
             grade: row.grade,
           })),
         }),
       });
+
+      // Handle redirect (session expired) or non-JSON response
+      if (response.redirected) {
+        router.push('/admin/login');
+        return;
+      }
+
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        setError('セッションが切れました。再度ログインしてください。');
+        router.push('/admin/login');
+        return;
+      }
 
       const data = await response.json();
 

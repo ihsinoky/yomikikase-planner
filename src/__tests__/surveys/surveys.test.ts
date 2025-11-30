@@ -188,6 +188,32 @@ describe('POST /api/surveys', () => {
     expect(data.error).toBe('指定された年度が見つかりません');
   });
 
+  it('should return 400 when date is outside school year range', async () => {
+    const mockSchoolYear = {
+      id: 'year-1',
+      name: '2025年度',
+      startDate: new Date('2025-04-01'),
+      endDate: new Date('2026-03-31'),
+      isActive: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    vi.mocked(prisma.schoolYear.findUnique).mockResolvedValue(mockSchoolYear);
+
+    const request = createMockRequest({
+      schoolYearId: 'year-1',
+      title: 'Test Survey',
+      surveyDates: [{ date: '2027-06-01', grade: 'JUNIOR' }],
+    });
+
+    const response = await POST(request);
+    const data = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(data.error).toContain('候補日は年度の期間内');
+  });
+
   it('should create survey successfully', async () => {
     const mockSchoolYear = {
       id: 'year-1',

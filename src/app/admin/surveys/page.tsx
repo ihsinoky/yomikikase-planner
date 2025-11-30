@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 interface SchoolYear {
@@ -24,6 +25,7 @@ interface Survey {
 }
 
 export default function SurveyListPage() {
+  const router = useRouter();
   const [surveys, setSurveys] = useState<Survey[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -32,6 +34,20 @@ export default function SurveyListPage() {
     const fetchSurveys = async () => {
       try {
         const response = await fetch('/api/surveys');
+
+        // Handle redirect (session expired) or non-JSON response
+        if (response.redirected) {
+          router.push('/admin/login');
+          return;
+        }
+
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          setError('セッションが切れました。再度ログインしてください。');
+          router.push('/admin/login');
+          return;
+        }
+
         if (!response.ok) {
           throw new Error('Failed to fetch surveys');
         }
@@ -45,7 +61,7 @@ export default function SurveyListPage() {
     };
 
     fetchSurveys();
-  }, []);
+  }, [router]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);

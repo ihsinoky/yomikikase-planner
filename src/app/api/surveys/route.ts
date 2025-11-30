@@ -89,6 +89,24 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '指定された年度が見つかりません' }, { status: 400 });
     }
 
+    // Validate that all dates fall within the school year's date range
+    const startDate = new Date(schoolYear.startDate);
+    const endDate = new Date(schoolYear.endDate);
+
+    for (const surveyDate of surveyDates) {
+      const date = new Date(surveyDate.date);
+      if (date < startDate || date > endDate) {
+        const formattedStart = startDate.toLocaleDateString('ja-JP');
+        const formattedEnd = endDate.toLocaleDateString('ja-JP');
+        return NextResponse.json(
+          {
+            error: `候補日は年度の期間内（${formattedStart}〜${formattedEnd}）で指定してください`,
+          },
+          { status: 400 }
+        );
+      }
+    }
+
     // Create survey with survey dates using nested create (Prisma handles this atomically)
     const survey = await prisma.survey.create({
       data: {
