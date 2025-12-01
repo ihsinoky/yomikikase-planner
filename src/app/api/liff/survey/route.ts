@@ -248,11 +248,15 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    if (!updatedResponse) {
+      return NextResponse.json({ error: '回答の保存中にエラーが発生しました' }, { status: 500 });
+    }
+
     return NextResponse.json({
       message: '回答を送信しました',
       response: {
-        id: updatedResponse!.id,
-        responseDetails: updatedResponse!.responseDetails.map((rd) => ({
+        id: updatedResponse.id,
+        responseDetails: updatedResponse.responseDetails.map((rd) => ({
           surveyDateId: rd.surveyDateId,
           date: rd.surveyDate.date,
           grade: rd.surveyDate.grade,
