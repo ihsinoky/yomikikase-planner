@@ -17,7 +17,7 @@ interface SubmitResponseRequest {
 /**
  * GET /api/liff/survey
  *
- * Gets the latest survey for the active school year.
+ * Gets the most recently created survey (by createdAt descending) for the active school year.
  * Returns the survey with its survey dates so users can respond.
  * Requires idToken as a query parameter.
  */
