@@ -221,44 +221,48 @@ export async function POST(request: NextRequest) {
     }
     // Use upsert to create or update the response
     const response = await prisma.response.upsert({
-      where: {
-        surveyId_userId: {
+    // Use a transaction to ensure atomicity of response and responseDetails updates
+    const updatedResponse = await prisma.$transaction(async (tx) => {
+      // Upsert the response
+      const response = await tx.response.upsert({
+        where: {
+          surveyId_userId: {
+            surveyId: body.surveyId,
+            userId: user.id,
+          },
+        },
+        update: {},
+        create: {
           surveyId: body.surveyId,
           userId: user.id,
         },
-      },
-      update: {
-        updatedAt: new Date(),
-      },
-      create: {
-        surveyId: body.surveyId,
-        userId: user.id,
-      },
-    });
+      });
 
-    // Delete existing response details and create new ones
-    await prisma.responseDetail.deleteMany({
-      where: { responseId: response.id },
-    });
+      // Delete existing response details
+      await tx.responseDetail.deleteMany({
+        where: { responseId: response.id },
+      });
 
-    await prisma.responseDetail.createMany({
-      data: body.responseDetails.map((detail) => ({
-        responseId: response.id,
-        surveyDateId: detail.surveyDateId,
-        status: detail.status,
-      })),
-    });
+      // Create new response details
+      await tx.responseDetail.createMany({
+        data: body.responseDetails.map((detail) => ({
+          responseId: response.id,
+          surveyDateId: detail.surveyDateId,
+          status: detail.status,
+        })),
+      });
 
-    // Fetch the updated response with details
-    const updatedResponse = await prisma.response.findUnique({
-      where: { id: response.id },
-      include: {
-        responseDetails: {
-          include: {
-            surveyDate: true,
+      // Fetch the updated response with details
+      return await tx.response.findUnique({
+        where: { id: response.id },
+        include: {
+          responseDetails: {
+            include: {
+              surveyDate: true,
+            },
           },
         },
-      },
+      });
     });
 
     if (!updatedResponse) {
