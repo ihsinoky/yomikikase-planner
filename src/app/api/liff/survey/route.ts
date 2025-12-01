@@ -208,6 +208,17 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Validate that all survey dates have a response
+    if (body.responseDetails.length !== survey.surveyDates.length) {
+      return NextResponse.json({ error: 'すべての候補日について回答してください' }, { status: 400 });
+    }
+    // Validate that all survey date IDs in the survey have been answered
+    const respondedDateIds = new Set(body.responseDetails.map(d => d.surveyDateId));
+    for (const surveyDate of survey.surveyDates) {
+      if (!respondedDateIds.has(surveyDate.id)) {
+        return NextResponse.json({ error: 'すべての候補日について回答してください' }, { status: 400 });
+      }
+    }
     // Use upsert to create or update the response
     const response = await prisma.response.upsert({
       where: {
