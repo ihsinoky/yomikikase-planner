@@ -110,7 +110,7 @@ export async function GET(request: NextRequest) {
         },
         surveyDates: survey.surveyDates.map((sd) => ({
           id: sd.id,
-          date: sd.date,
+          date: sd.date.toISOString().split('T')[0],
           grade: sd.grade,
         })),
       },
