@@ -91,8 +91,10 @@ export default function SurveyPage() {
       
       if (!surveyResponse.ok) {
         const errorData = await surveyResponse.json();
-        if (surveyResponse.status === 404) {
+        if (surveyResponse.status === 404 || surveyResponse.status === 400) {
           // User not found - redirect to profile registration
+          setError('プロフィール登録が必要です。リダイレクト中...');
+          setIsInitializing(true);
           window.location.href = '/liff';
           return;
         }
