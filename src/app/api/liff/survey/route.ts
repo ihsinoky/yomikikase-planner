@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
     });
 
     if (!activeSchoolYear) {
-      return NextResponse.json({ error: '現在アクティブな年度がありません' }, { status: 400 });
+      return NextResponse.json({ survey: null, existingResponse: null });
     }
 
     // Check if user has a profile for the current year
