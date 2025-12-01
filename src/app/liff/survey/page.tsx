@@ -183,7 +183,8 @@ export default function SurveyPage() {
       }
 
       setIsSubmitted(true);
-    } catch {
+    } catch (error) {
+      console.error('Submit survey response error:', error);
       setError('回答の送信中にエラーが発生しました');
     } finally {
       setIsSubmitting(false);
