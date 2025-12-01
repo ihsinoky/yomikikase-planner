@@ -33,6 +33,7 @@ vi.mock('@/lib/prisma', () => ({
       deleteMany: vi.fn(),
       createMany: vi.fn(),
     },
+    $transaction: vi.fn(),
   },
 }));
 
@@ -154,7 +155,7 @@ describe('GET /api/liff/survey', () => {
     expect(data.error).toBe('ユーザーが見つかりません。プロフィールを登録してください。');
   });
 
-  it('should return 400 when no active school year', async () => {
+  it('should return null survey when no active school year', async () => {
     vi.mocked(verifyIdToken).mockResolvedValue({
       lineUserId: 'U123456',
       displayName: 'Test User',
@@ -166,8 +167,9 @@ describe('GET /api/liff/survey', () => {
     const response = await GET(request);
     const data = await response.json();
 
-    expect(response.status).toBe(400);
-    expect(data.error).toBe('現在アクティブな年度がありません');
+    expect(response.status).toBe(200);
+    expect(data.survey).toBe(null);
+    expect(data.existingResponse).toBe(null);
   });
 
   it('should return 400 when user has no profile', async () => {
@@ -432,6 +434,50 @@ describe('POST /api/liff/survey', () => {
     expect(data.error).toBe('無効な候補日IDが含まれています');
   });
 
+  it('should return 400 when duplicate surveyDateId is provided', async () => {
+    vi.mocked(verifyIdToken).mockResolvedValue({
+      lineUserId: 'U123456',
+      displayName: 'Test User',
+    });
+
+    const request = createMockPostRequest({
+      idToken: 'valid-token',
+      surveyId: 'survey-1',
+      responseDetails: [
+        { surveyDateId: 'date-1', status: 'AVAILABLE' },
+        { surveyDateId: 'date-1', status: 'UNAVAILABLE' },
+      ],
+    });
+    const response = await POST(request);
+    const data = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(data.error).toBe('重複した候補日IDが含まれています');
+  });
+
+  it('should return 400 when not all survey dates are answered', async () => {
+    vi.mocked(verifyIdToken).mockResolvedValue({
+      lineUserId: 'U123456',
+      displayName: 'Test User',
+    });
+    vi.mocked(prisma.user.findUnique).mockResolvedValue(mockUser);
+    vi.mocked(prisma.survey.findUnique).mockResolvedValue(mockSurvey);
+
+    const request = createMockPostRequest({
+      idToken: 'valid-token',
+      surveyId: 'survey-1',
+      responseDetails: [
+        { surveyDateId: 'date-1', status: 'AVAILABLE' },
+        // Missing date-2
+      ],
+    });
+    const response = await POST(request);
+    const data = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(data.error).toBe('すべての候補日について回答してください');
+  });
+
   it('should successfully submit survey response', async () => {
     vi.mocked(verifyIdToken).mockResolvedValue({
       lineUserId: 'U123456',
@@ -440,19 +486,12 @@ describe('POST /api/liff/survey', () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValue(mockUser);
     vi.mocked(prisma.survey.findUnique).mockResolvedValue(mockSurvey);
 
-    const mockResponse = {
+    const mockUpdatedResponse = {
       id: 'response-1',
       surveyId: 'survey-1',
       userId: 'user-1',
       createdAt: new Date(),
       updatedAt: new Date(),
-    };
-    vi.mocked(prisma.response.upsert).mockResolvedValue(mockResponse);
-    vi.mocked(prisma.responseDetail.deleteMany).mockResolvedValue({ count: 0 });
-    vi.mocked(prisma.responseDetail.createMany).mockResolvedValue({ count: 2 });
-
-    const mockUpdatedResponse = {
-      ...mockResponse,
       responseDetails: [
         {
           id: 'detail-1',
@@ -474,7 +513,27 @@ describe('POST /api/liff/survey', () => {
         },
       ],
     };
-    vi.mocked(prisma.response.findUnique).mockResolvedValue(mockUpdatedResponse);
+
+    // Mock the transaction - it will be called with a function, execute that function with mock tx
+    vi.mocked(prisma.$transaction).mockImplementation(async (fn) => {
+      const mockTx = {
+        response: {
+          upsert: vi.fn().mockResolvedValue({
+            id: 'response-1',
+            surveyId: 'survey-1',
+            userId: 'user-1',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          }),
+          findUnique: vi.fn().mockResolvedValue(mockUpdatedResponse),
+        },
+        responseDetail: {
+          deleteMany: vi.fn().mockResolvedValue({ count: 0 }),
+          createMany: vi.fn().mockResolvedValue({ count: 2 }),
+        },
+      };
+      return fn(mockTx as unknown as Parameters<typeof fn>[0]);
+    });
 
     const request = createMockPostRequest({
       idToken: 'valid-token',

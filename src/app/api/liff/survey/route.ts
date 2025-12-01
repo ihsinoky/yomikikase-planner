@@ -20,6 +20,7 @@ interface SubmitResponseRequest {
  * Gets the most recently created survey (by createdAt descending) for the active school year.
  * Returns the survey with its survey dates so users can respond.
  * Requires idToken as a query parameter.
+ * If user has already responded, returns existing response for pre-fill.
  */
 export async function GET(request: NextRequest) {
   try {
@@ -71,6 +72,9 @@ export async function GET(request: NextRequest) {
     }
 
     // Get the latest survey for the active school year
+    // TODO: MVP後の改善 - 多くのアンケートがある場合のパフォーマンス最適化
+    // - `take: 1` を追加して明示的に1件のみ取得
+    // - アンケートにステータス（OPEN/CLOSED等）を追加し、フィルタ条件を追加する
     const survey = await prisma.survey.findFirst({
       where: { schoolYearId: activeSchoolYear.id },
       orderBy: { createdAt: 'desc' },
@@ -153,12 +157,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '回答を入力してください' }, { status: 400 });
     }
 
-    // Validate each response detail
+    // Validate each response detail and check for duplicates
     const validStatuses: ResponseStatus[] = ['AVAILABLE', 'UNAVAILABLE'];
+    const surveyDateIdSet = new Set<string>();
     for (const detail of body.responseDetails) {
       if (!detail.surveyDateId || typeof detail.surveyDateId !== 'string') {
         return NextResponse.json({ error: '候補日IDが不正です' }, { status: 400 });
       }
+      if (surveyDateIdSet.has(detail.surveyDateId)) {
+        return NextResponse.json({ error: '重複した候補日IDが含まれています' }, { status: 400 });
+      }
+      surveyDateIdSet.add(detail.surveyDateId);
       if (!detail.status || !validStatuses.includes(detail.status)) {
         return NextResponse.json({ error: '回答ステータスが不正です' }, { status: 400 });
       }
@@ -219,8 +228,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'すべての候補日について回答してください' }, { status: 400 });
       }
     }
-    // Use upsert to create or update the response
-    const response = await prisma.response.upsert({
+
     // Use a transaction to ensure atomicity of response and responseDetails updates
     const updatedResponse = await prisma.$transaction(async (tx) => {
       // Upsert the response

@@ -139,6 +139,7 @@ export default function SurveyPage() {
   }, [initializeLiff]);
 
   const handleResponseChange = (surveyDateId: string, status: ResponseStatus) => {
+    setError(null); // Clear error when user makes changes
     setResponses((prev) => ({
       ...prev,
       [surveyDateId]: status,
@@ -448,10 +449,11 @@ export default function SurveyPage() {
                 </p>
               </div>
 
-              <div style={{ display: 'flex', gap: '8px' }}>
+              <div style={{ display: 'flex', gap: '8px' }} role="group" aria-label={`${formatDate(surveyDate.date)}の参加可否`}>
                 <button
                   type="button"
                   onClick={() => handleResponseChange(surveyDate.id, 'AVAILABLE')}
+                  aria-pressed={responses[surveyDate.id] === 'AVAILABLE'}
                   style={{
                     flex: 1,
                     padding: '12px',
@@ -470,6 +472,7 @@ export default function SurveyPage() {
                 <button
                   type="button"
                   onClick={() => handleResponseChange(surveyDate.id, 'UNAVAILABLE')}
+                  aria-pressed={responses[surveyDate.id] === 'UNAVAILABLE'}
                   style={{
                     flex: 1,
                     padding: '12px',
