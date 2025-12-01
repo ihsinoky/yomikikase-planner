@@ -87,7 +87,13 @@ export default function SurveyPage() {
       }
 
       // Fetch the latest survey
-      const surveyResponse = await fetch(`/api/liff/survey?idToken=${encodeURIComponent(idToken)}`);
+      const surveyResponse = await fetch('/api/liff/survey', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`,
+        },
+      });
       
       if (!surveyResponse.ok) {
         const errorData = await surveyResponse.json();
