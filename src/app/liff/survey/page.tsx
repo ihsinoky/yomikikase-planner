@@ -42,6 +42,17 @@ const GRADE_LABELS: Record<Grade, string> = {
   SENIOR: '年長',
 };
 
+// Format date for display - defined outside component to avoid recreation on every render
+function formatDate(dateString: string): string {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('ja-JP', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    weekday: 'short',
+  });
+}
+
 export default function SurveyPage() {
   const [isInitializing, setIsInitializing] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -50,16 +61,6 @@ export default function SurveyPage() {
   const [responses, setResponses] = useState<Record<string, ResponseStatus>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('ja-JP', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      weekday: 'short',
-    });
-  };
 
   const initializeLiff = useCallback(async () => {
     try {
