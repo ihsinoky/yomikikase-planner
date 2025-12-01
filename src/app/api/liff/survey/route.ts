@@ -227,7 +227,9 @@ export async function POST(request: NextRequest) {
           userId: user.id,
         },
       },
-      update: {},
+      update: {
+        updatedAt: new Date(),
+      },
       create: {
         surveyId: body.surveyId,
         userId: user.id,
