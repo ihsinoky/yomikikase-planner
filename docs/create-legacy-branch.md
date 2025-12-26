@@ -37,7 +37,7 @@ git push origin legacy-nextjs-2025-12
 Visit the GitHub repository and confirm:
 - The `legacy/nextjs-2025-12` branch appears in the branch list
 - It contains the Next.js/Prisma implementation
-- The branch is at the same commit as the current `main` branch (8241dfe)
+- The branch is at the same commit as the `main` branch at the time of creation
 
 ### Step 4: Optional - Protect the branch
 
@@ -51,7 +51,7 @@ To prevent accidental modifications to the legacy branch:
 ## Acceptance Criteria
 
 - ✅ `legacy/nextjs-2025-12` branch exists on GitHub
-- ✅ Branch points to commit 8241dfe (or current main)
+- ✅ Branch points to the `main` branch at the time of creation
 - ✅ Branch contains the complete Next.js/Prisma implementation
 - ✅ Issue #20 can be closed after branch creation
 

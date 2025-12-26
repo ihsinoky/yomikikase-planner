@@ -16,7 +16,7 @@ This document tracks the completion status of all Sprint 0 Definition of Done (D
 
 **Details:**
 - Target branch name: `legacy/nextjs-2025-12`
-- Source commit: `8241dfe` (current main)
+- Source: `main` branch (at time of creation)
 - Documentation: [`docs/create-legacy-branch.md`](./create-legacy-branch.md)
 - Related Issue: #20 (Open)
 
