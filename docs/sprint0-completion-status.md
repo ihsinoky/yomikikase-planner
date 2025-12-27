@@ -103,7 +103,7 @@ This document tracks the completion status of all Sprint 0 Definition of Done (D
 
 **Details:**
 - README section: "⚠️ 重要なお知らせ：アーキテクチャの軌道修正"
-- Prominent announcement at top of README (lines 5-16)
+- Prominent announcement at top of README (lines 5-17)
 - Direct link text: **[軌道修正計画（Pivot Plan）](docs/pivot-plan.md)**
 - Location: Line 10 of README.md
 - Additional context:
