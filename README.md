@@ -19,7 +19,7 @@
 当初のNext.js/Prismaベースの実装は、以下のブランチ・タグで保存されています：
 
 - **ブランチ**: [`legacy/nextjs-2025-12`](https://github.com/ihsinoky/yomikikase-planner/tree/legacy/nextjs-2025-12)
-- **タグ**: [`legacy-nextjs-2025-12`](https://github.com/ihsinoky/yomikikase-planner/releases/tag/legacy-nextjs-2025-12)
+- **タグ**: [`legacy-nextjs-2025-12`](https://github.com/ihsinoky/yomikikase-planner/tree/legacy-nextjs-2025-12)
 
 今後の開発は新方針（Spreadsheet + GAS + 静的LIFF）で進めます。
 

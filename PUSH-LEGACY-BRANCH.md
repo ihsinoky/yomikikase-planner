@@ -22,7 +22,7 @@ This will:
 ## Verification Steps
 After pushing, verify:
 1. Branch is accessible: https://github.com/ihsinoky/yomikikase-planner/tree/legacy/nextjs-2025-12
-2. Tag is accessible: https://github.com/ihsinoky/yomikikase-planner/releases/tag/legacy-nextjs-2025-12
+2. Tag is accessible: https://github.com/ihsinoky/yomikikase-planner/tree/legacy-nextjs-2025-12
 
 ## Optional: Branch Protection
 Consider setting up branch protection for `legacy/nextjs-2025-12` to prevent accidental modifications:
