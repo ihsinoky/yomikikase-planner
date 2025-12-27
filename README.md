@@ -14,6 +14,15 @@
 - 参加者UI：LIFF（静的HTML/JS、依存最小）
 - 管理UI：まずは Spreadsheet（必要最小限の運用）
 
+### 旧実装（Next.js/Prisma）の参照先
+
+当初のNext.js/Prismaベースの実装は、以下のブランチ・タグで保存されています：
+
+- **ブランチ**: [`legacy/nextjs-2025-12`](https://github.com/ihsinoky/yomikikase-planner/tree/legacy/nextjs-2025-12)
+- **タグ**: [`legacy-nextjs-2025-12`](https://github.com/ihsinoky/yomikikase-planner/tree/legacy-nextjs-2025-12)
+
+今後の開発は新方針（Spreadsheet + GAS + 静的LIFF）で進めます。
+
 ---
 
 ## 旧README（参考情報）
