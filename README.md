@@ -14,6 +14,13 @@
 - 参加者UI：LIFF（静的HTML/JS、依存最小）
 - 管理UI：まずは Spreadsheet（必要最小限の運用）
 
+### 📊 データ構造・テンプレート
+
+新方式のデータ構造は以下で確認できます：
+
+- **[Spreadsheet スキーマ定義](docs/sheets-schema.md)** - 各タブの列定義と仕様
+- **[シートテンプレート](sheet-template/)** - CSV形式のテンプレートファイル
+
 ### 旧実装（Next.js/Prisma）の参照先
 
 当初のNext.js/Prismaベースの実装は、以下のブランチ・タグで保存されています：
