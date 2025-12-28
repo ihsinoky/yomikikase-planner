@@ -1,0 +1,4 @@
+logId,timestamp,level,source,message,details
+log_001,2025-12-28 12:00:00,INFO,doPost,回答を正常に保存しました,"{""userId"":""U1234567890abcdef"",""surveyId"":""survey_001""}"
+log_002,2025-12-28 12:05:00,ERROR,saveResponse,回答の保存に失敗しました,"{""error"":""surveyDateId not found"",""surveyDateId"":""invalid_id""}"
+log_003,2025-12-28 12:10:00,WARN,doGet,未認証のアクセス試行,"{""ip"":""192.168.1.1""}"

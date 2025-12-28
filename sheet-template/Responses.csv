@@ -1,0 +1,6 @@
+responseId,surveyId,surveyDateId,lineUserId,answer,submittedAt,notes
+res_001,survey_001,date_001,U1234567890abcdef,可,2025-12-28 12:00:00,
+res_002,survey_001,date_004,U1234567890abcdef,不可,2025-12-28 12:00:00,用事があり参加できません
+res_003,survey_001,date_002,U2345678901bcdefg,可,2025-12-28 12:05:00,
+res_004,survey_001,date_003,U3456789012cdefgh,可,2025-12-28 12:10:00,
+res_005,survey_001,date_002,U3456789012cdefgh,未定,2025-12-28 12:10:00,年中の日程は未定

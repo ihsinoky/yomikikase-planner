@@ -1,0 +1,4 @@
+key,value,description,updatedAt
+activeSurveyId,survey_001,現在アクティブなアンケートID,2025-12-28 10:00:00
+liffId,1234567890-abcdefgh,LIFF アプリケーションID,2025-12-28 10:00:00
+appVersion,1.0.0,アプリケーションバージョン,2025-12-28 10:00:00
