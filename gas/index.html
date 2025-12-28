@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>読み聞かせプランナー</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: #f5f5f5;
+      color: #333;
+      padding: 16px;
+      line-height: 1.6;
+    }
+    
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 8px;
+      padding: 24px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    h1 {
+      font-size: 24px;
+      margin-bottom: 16px;
+      color: #06c755;
+    }
+    
+    .status {
+      padding: 12px;
+      background-color: #e8f5e9;
+      border-left: 4px solid #4caf50;
+      border-radius: 4px;
+      margin-bottom: 24px;
+    }
+    
+    .status.loading {
+      background-color: #fff3e0;
+      border-left-color: #ff9800;
+    }
+    
+    .status.error {
+      background-color: #ffebee;
+      border-left-color: #f44336;
+    }
+    
+    .info-section {
+      margin-bottom: 24px;
+    }
+    
+    .info-section h2 {
+      font-size: 18px;
+      margin-bottom: 12px;
+      color: #555;
+    }
+    
+    .info-section p {
+      margin-bottom: 8px;
+      color: #666;
+    }
+    
+    .button {
+      display: inline-block;
+      padding: 12px 24px;
+      background-color: #06c755;
+      color: white;
+      text-decoration: none;
+      border-radius: 4px;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background-color 0.2s;
+    }
+    
+    .button:hover {
+      background-color: #05b34a;
+    }
+    
+    .button:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+    
+    .footer {
+      margin-top: 32px;
+      padding-top: 16px;
+      border-top: 1px solid #e0e0e0;
+      text-align: center;
+      color: #999;
+      font-size: 14px;
+    }
+  </style>
+  <!-- LIFF SDK (CDN) -->
+  <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+</head>
+<body>
+  <div class="container">
+    <h1>📚 読み聞かせプランナー</h1>
+    
+    <div id="status" class="status loading">
+      読み込み中...
+    </div>
+    
+    <div class="info-section">
+      <h2>システム情報</h2>
+      <p>このアプリケーションは、幼稚園の読み聞かせ活動を管理するための LINE ミニアプリです。</p>
+      <p><strong>現在の状態:</strong> Sprint 1 - 骨格実装完了</p>
+    </div>
+    
+    <div class="info-section">
+      <h2>実装予定機能（Sprint 2以降）</h2>
+      <ul style="margin-left: 20px; color: #666;">
+        <li>アンケート回答機能</li>
+        <li>参加履歴の確認</li>
+        <li>プロフィール登録</li>
+      </ul>
+    </div>
+    
+    <div class="footer">
+      <p>yomikikase-planner v1.0.0</p>
+      <p>Powered by Google Apps Script</p>
+    </div>
+  </div>
+
+  <script>
+    // LIFF 初期化（Sprint 2 以降で本格実装）
+    document.addEventListener('DOMContentLoaded', function() {
+      const statusEl = document.getElementById('status');
+      
+      // LIFF が利用可能かチェック
+      if (typeof liff === 'undefined') {
+        statusEl.className = 'status';
+        statusEl.textContent = '✓ GAS Web App として正常に動作しています（LIFF未設定）';
+        return;
+      }
+      
+      // LIFF 初期化は Sprint 2 以降で実装
+      // 現時点では LIFF ID が未設定のため、初期化をスキップ
+      statusEl.className = 'status';
+      statusEl.textContent = '✓ LIFF SDK 読み込み完了（初期化は Sprint 2 で実装予定）';
+      
+      /*
+       * Sprint 2 での実装例:
+       * 
+       * liff.init({
+       *   liffId: 'YOUR-LIFF-ID'
+       * }).then(() => {
+       *   if (!liff.isLoggedIn()) {
+       *     liff.login();
+       *   } else {
+       *     // ユーザー情報を取得して処理
+       *     loadUserData();
+       *   }
+       * }).catch((err) => {
+       *   statusEl.className = 'status error';
+       *   statusEl.textContent = 'LIFF 初期化エラー: ' + err.message;
+       * });
+       */
+    });
+  </script>
+</body>
+</html>
