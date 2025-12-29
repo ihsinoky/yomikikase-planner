@@ -90,16 +90,7 @@
     <div class="info-section">
       <h2>システム情報</h2>
       <p>このアプリケーションは、幼稚園の読み聞かせ活動を管理するための LINE ミニアプリです。</p>
-      <p><strong>現在の状態:</strong> Sprint 1 - 骨格実装完了</p>
-    </div>
-    
-    <div class="info-section">
-      <h2>実装予定機能（Sprint 2以降）</h2>
-      <ul style="margin-left: 20px; color: #666;">
-        <li>アンケート回答機能</li>
-        <li>参加履歴の確認</li>
-        <li>プロフィール登録</li>
-      </ul>
+      <p><strong>現在の状態:</strong> Sprint 1 - LIFF初期表示＋ヘルスチェック実装</p>
     </div>
     
     <div class="footer">
@@ -109,40 +100,144 @@
   </div>
 
   <script>
-    // LIFF 初期化（Sprint 2 以降で本格実装）
-    document.addEventListener('DOMContentLoaded', function() {
+    // Sprint 1: LIFF 初期化とヘルスチェック実装
+    document.addEventListener('DOMContentLoaded', async function() {
       const statusEl = document.getElementById('status');
       
       // LIFF が利用可能かチェック
       if (typeof liff === 'undefined') {
-        statusEl.className = 'status';
-        statusEl.textContent = '✓ GAS Web App として正常に動作しています（LIFF未設定）';
+        statusEl.className = 'status error';
+        statusEl.textContent = '✗ LIFF SDK が読み込まれていません';
+        addDebugInfo('環境', 'LIFF SDK 未読み込み');
         return;
       }
       
-      // LIFF 初期化は Sprint 2 以降で実装
-      // 現時点では LIFF ID が未設定のため、初期化をスキップ
-      statusEl.className = 'status';
-      statusEl.textContent = '✓ LIFF SDK 読み込み完了（初期化は Sprint 2 で実装予定）';
-      
-      /*
-       * Sprint 2 での実装例:
-       * 
-       * liff.init({
-       *   liffId: 'YOUR-LIFF-ID'
-       * }).then(() => {
-       *   if (!liff.isLoggedIn()) {
-       *     liff.login();
-       *   } else {
-       *     // ユーザー情報を取得して処理
-       *     loadUserData();
-       *   }
-       * }).catch((err) => {
-       *   statusEl.className = 'status error';
-       *   statusEl.textContent = 'LIFF 初期化エラー: ' + err.message;
-       * });
-       */
+      try {
+        // LIFF ID を取得（GAS のプロパティサービスまたは環境変数から設定することを想定）
+        // Sprint 1では、まずハードコードまたはクエリパラメータで LIFF ID を受け取る
+        const urlParams = new URLSearchParams(window.location.search);
+        const liffId = urlParams.get('liffId') || 'YOUR-LIFF-ID-HERE';
+        
+        if (liffId === 'YOUR-LIFF-ID-HERE') {
+          statusEl.className = 'status';
+          statusEl.textContent = 'ℹ LIFF ID が未設定です。URLに ?liffId=YOUR_LIFF_ID を追加してください。';
+          addDebugInfo('環境', 'LIFF ID 未設定');
+          addDebugInfo('ヒント', 'URLパラメータ: ?liffId=YOUR_LIFF_ID');
+          
+          // LIFF ID なしでも health チェックは実行
+          await checkHealth();
+          return;
+        }
+        
+        statusEl.textContent = 'LIFF を初期化中...';
+        addDebugInfo('LIFF ID', liffId.substring(0, 10) + '...');
+        
+        // LIFF 初期化
+        await liff.init({ liffId: liffId });
+        
+        // ログイン状態チェック
+        if (!liff.isLoggedIn()) {
+          statusEl.className = 'status';
+          statusEl.textContent = '未ログイン - ログインページにリダイレクトします...';
+          addDebugInfo('状態', '未ログイン（外部ブラウザまたは初回起動）');
+          
+          // 外部ブラウザ対策: login() を呼ぶ
+          setTimeout(() => {
+            liff.login();
+          }, 2000);
+          return;
+        }
+        
+        // ログイン済み - プロフィール情報を取得
+        statusEl.className = 'status';
+        statusEl.textContent = '✓ LIFF ログイン成功';
+        
+        const profile = await liff.getProfile();
+        addDebugInfo('ユーザーID', profile.userId);
+        addDebugInfo('表示名', profile.displayName || '(未設定)');
+        addDebugInfo('プロフィール画像', profile.pictureUrl ? 'あり' : 'なし');
+        
+        // コンテキスト情報を追加
+        const context = liff.getContext();
+        if (context) {
+          addDebugInfo('起動元', context.type || 'unknown');
+        }
+        
+        // OS情報
+        addDebugInfo('OS', liff.getOS());
+        
+        // LINE バージョン
+        const lineVersion = liff.getLineVersion();
+        if (lineVersion) {
+          addDebugInfo('LINE バージョン', lineVersion);
+        }
+        
+        // 外部ブラウザかどうか
+        addDebugInfo('外部ブラウザ', liff.isInClient() ? 'いいえ（LINEアプリ内）' : 'はい');
+        
+        // ヘルスチェックAPI を実行
+        await checkHealth();
+        
+      } catch (err) {
+        statusEl.className = 'status error';
+        statusEl.textContent = '✗ LIFF 初期化エラー: ' + err.message;
+        addDebugInfo('エラー詳細', err.toString());
+        console.error('LIFF initialization error:', err);
+      }
     });
+    
+    // ヘルスチェック API を呼び出す
+    async function checkHealth() {
+      try {
+        const baseUrl = window.location.href.split('?')[0];
+        const healthUrl = baseUrl + '?action=health';
+        
+        addDebugInfo('ヘルスチェックURL', healthUrl);
+        
+        const response = await fetch(healthUrl);
+        const data = await response.json();
+        
+        if (data.ok) {
+          addDebugInfo('GAS Health', '✓ OK - ' + data.message);
+          addDebugInfo('タイムスタンプ', data.timestamp);
+        } else {
+          addDebugInfo('GAS Health', '✗ 失敗');
+        }
+      } catch (err) {
+        addDebugInfo('GAS Health', '✗ エラー: ' + err.message);
+        console.error('Health check error:', err);
+      }
+    }
+    
+    // デバッグ情報をページに追加
+    function addDebugInfo(label, value) {
+      const container = document.querySelector('.container');
+      
+      // デバッグセクションが存在しない場合は作成
+      let debugSection = document.getElementById('debug-section');
+      if (!debugSection) {
+        debugSection = document.createElement('div');
+        debugSection.id = 'debug-section';
+        debugSection.className = 'info-section';
+        debugSection.innerHTML = '<h2>デバッグ情報</h2><div id="debug-items"></div>';
+        
+        // フッターの前に挿入
+        const footer = document.querySelector('.footer');
+        container.insertBefore(debugSection, footer);
+      }
+      
+      const debugItems = document.getElementById('debug-items');
+      const item = document.createElement('p');
+      item.innerHTML = '<strong>' + escapeHtml(label) + ':</strong> ' + escapeHtml(value);
+      debugItems.appendChild(item);
+    }
+    
+    // HTML エスケープ
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
   </script>
 </body>
 </html>
