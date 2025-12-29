@@ -21,6 +21,13 @@
 - **[Spreadsheet スキーマ定義](docs/sheets-schema.md)** - 各タブの列定義と仕様
 - **[シートテンプレート](sheet-template/)** - CSV形式のテンプレートファイル
 
+### 🚀 Google Apps Script Web App
+
+GAS Web App の実装とデプロイ手順：
+
+- **[GAS ディレクトリ](gas/)** - Apps Script のコードとデプロイ手順
+- **主な機能**: HTML配信、health API、Logsシート記録、LockService ラッパー
+
 ### 旧実装（Next.js/Prisma）の参照先
 
 当初のNext.js/Prismaベースの実装は、以下のブランチ・タグで保存されています：
