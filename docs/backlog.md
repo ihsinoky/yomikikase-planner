@@ -4,6 +4,23 @@
 
 ## Sprint 2 以降で検討すべき項目
 
+### UX改善
+
+#### LIFF ログインリダイレクトの UX 改善
+- **Issue**: 未ログイン時の2秒のリダイレクト遅延がユーザーに混乱を与える可能性
+- **Current**: `LOGIN_REDIRECT_DELAY_MS = 2000` で2秒待機してからログインページにリダイレクト
+- **Proposed Solution**: 
+  - オプション1: 即時リダイレクト（遅延なし）
+  - オプション2: カウントダウン表示を追加してユーザーに状態を明示
+  - オプション3: 実機テストの結果に基づいて最適な遅延時間を決定
+- **Priority**: Medium
+- **Context**: Sprint 1 ではデバッグ目的で遅延を設けている。実機テストで実際のUXを確認してから最適な実装を決定する
+- **Related Code**: `gas/index.html` - `LOGIN_REDIRECT_DELAY_MS` constant and login redirect logic (lines 104-105, 152-155)
+- **Related PR Comment**: [PR Review Comment #2650442222](https://github.com/ihsinoky/yomikikase-planner/pull/XXX#discussion_r2650442222)
+- **Date Added**: 2025-12-29
+- **Added By**: PR Review
+- **Note**: 定数化済みのため、将来の調整は容易
+
 ### パフォーマンス最適化
 
 #### ログ書き込みの最適化
