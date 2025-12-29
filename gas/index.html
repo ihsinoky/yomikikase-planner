@@ -130,7 +130,9 @@
         }
         
         statusEl.textContent = 'LIFF を初期化中...';
-        addDebugInfo('LIFF ID', liffId.substring(0, 10) + '...');
+        // LIFF ID の長さをチェックしてから表示
+        const liffIdDisplay = liffId.length > 10 ? liffId.substring(0, 10) + '...' : liffId;
+        addDebugInfo('LIFF ID', liffIdDisplay);
         
         // LIFF 初期化
         await liff.init({ liffId: liffId });
@@ -195,6 +197,13 @@
         addDebugInfo('ヘルスチェックURL', healthUrl);
         
         const response = await fetch(healthUrl);
+        
+        // HTTP ステータスをチェック
+        if (!response.ok) {
+          addDebugInfo('GAS Health', '✗ HTTPエラー: ' + response.status);
+          return;
+        }
+        
         const data = await response.json();
         
         if (data.ok) {
@@ -234,8 +243,14 @@
     
     // HTML エスケープ
     function escapeHtml(text) {
+      // null/undefined チェック
+      if (text == null) {
+        return '';
+      }
+      // 文字列に変換
+      const str = String(text);
       const div = document.createElement('div');
-      div.textContent = text;
+      div.textContent = str;
       return div.innerHTML;
     }
   </script>
