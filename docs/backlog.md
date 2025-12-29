@@ -35,6 +35,23 @@
 - **Added By**: Code Review
 - **Partial Fix**: ID フォーマットのバリデーションは commit 4d5b3e9 で対応済み
 
+### エラーハンドリング
+
+#### 再帰的ログの完全防止
+- **Issue**: doGet/doPost のエラーハンドラ内で `logToSheet` を呼び出すため、システムレベルの問題（権限エラーなど）発生時に元のエラーがマスクされる可能性
+- **Current**: logToSheet は例外を再スローしないため無限ループは発生しないが、システムレベルのエラーが隠蔽される可能性がある
+- **Proposed Solution**: 
+  - ログ深度カウンタを導入し、再帰的なログ試行を制限
+  - ログ失敗時の代替エラー報告メカニズム（例：別のログストレージ、外部サービス）
+  - クリティカルエラーとログエラーを区別する仕組み
+- **Priority**: Low
+- **Context**: Sprint 1 で handleHealthCheck/handleServeHtml に try/catch を追加済み。logToSheet も例外を再スローしないため、実際の問題発生リスクは低い
+- **Related Code**: `gas/Code.gs` - `doGet()`, `doPost()` error handlers (lines 56-60, 104-108)
+- **Related PR Comment**: [PR Review Comment #2649972243](https://github.com/ihsinoky/yomikikase-planner/pull/XXX#discussion_r2649972243)
+- **Date Added**: 2025-12-29
+- **Added By**: Code Review
+- **Mitigation**: logToSheet は既に try/catch で保護されており、エラーを再スローしない。handleHealthCheck/handleServeHtml も try/catch で保護済み
+
 ## 完了済み項目
 
 ### Sprint 1 で対応済み
