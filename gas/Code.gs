@@ -125,7 +125,12 @@ function doPost(e) {
  * @returns {ContentService} JSON レスポンス
  */
 function handleHealthCheck() {
-  logToSheet('INFO', 'handleHealthCheck', 'ヘルスチェックが実行されました');
+  try {
+    logToSheet('INFO', 'handleHealthCheck', 'ヘルスチェックが実行されました');
+  } catch (logError) {
+    // ログ記録失敗は無視して処理を継続
+    Logger.log('Warning: Failed to log health check: ' + logError.toString());
+  }
   
   return ContentService
     .createTextOutput(JSON.stringify({
@@ -142,7 +147,12 @@ function handleHealthCheck() {
  * @returns {HtmlOutput} HTML レスポンス
  */
 function handleServeHtml() {
-  logToSheet('INFO', 'handleServeHtml', 'LIFF HTML を配信しました');
+  try {
+    logToSheet('INFO', 'handleServeHtml', 'LIFF HTML を配信しました');
+  } catch (logError) {
+    // ログ記録失敗は無視して処理を継続
+    Logger.log('Warning: Failed to log HTML serving: ' + logError.toString());
+  }
   
   return HtmlService
     .createHtmlOutputFromFile('index')
@@ -161,6 +171,7 @@ function handleServeHtml() {
  * @param {string} source - ログ発生元（関数名など）
  * @param {string} message - ログメッセージ
  * @param {Object} details - 詳細情報（オプション）
+ * @returns {boolean} ログ記録が成功した場合 true、失敗した場合 false
  */
 function logToSheet(level, source, message, details) {
   try {
@@ -180,10 +191,16 @@ function logToSheet(level, source, message, details) {
       ]);
       
       Logger.log('[' + level + '] ' + source + ': ' + message);
+      return true;
     });
   } catch (error) {
-    // ログ記録自体に失敗した場合は、コンソールにのみ出力
-    Logger.log('Failed to log to sheet: ' + error.toString());
+    // ログ記録自体に失敗した場合は、詳細情報をコンソールに出力
+    var errorMessage = 'Failed to log to sheet: ' + error.toString();
+    if (error && error.stack) {
+      errorMessage += '\nStack trace:\n' + error.stack;
+    }
+    Logger.log(errorMessage);
+    return false;
   }
 }
 
@@ -236,7 +253,20 @@ function withLock(fn, timeout) {
     }
   } catch (error) {
     // ロック取得に失敗した場合
-    throw new Error('Failed to acquire lock: ' + error.toString());
+    var message = (error && error.message) ? String(error.message) : String(error);
+    var lowerMessage = message.toLowerCase();
+    
+    // タイムアウトによる失敗かどうかを判定
+    if (lowerMessage.indexOf('timeout') !== -1 || lowerMessage.indexOf('time out') !== -1) {
+      var timeoutError = new Error('Failed to acquire lock within ' + timeoutMs + ' ms: ' + message);
+      timeoutError.name = 'LockTimeoutError';
+      throw timeoutError;
+    }
+    
+    // それ以外の予期しないエラー
+    var lockError = new Error('Failed to acquire lock due to unexpected error: ' + message);
+    lockError.name = 'LockAcquisitionError';
+    throw lockError;
   }
 }
 

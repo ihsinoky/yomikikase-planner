@@ -67,28 +67,6 @@
       color: #666;
     }
     
-    .button {
-      display: inline-block;
-      padding: 12px 24px;
-      background-color: #06c755;
-      color: white;
-      text-decoration: none;
-      border-radius: 4px;
-      border: none;
-      cursor: pointer;
-      font-size: 16px;
-      transition: background-color 0.2s;
-    }
-    
-    .button:hover {
-      background-color: #05b34a;
-    }
-    
-    .button:disabled {
-      background-color: #ccc;
-      cursor: not-allowed;
-    }
-    
     .footer {
       margin-top: 32px;
       padding-top: 16px;
@@ -98,8 +76,8 @@
       font-size: 14px;
     }
   </style>
-  <!-- LIFF SDK (CDN) -->
-  <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <!-- LIFF SDK (CDN) - pinned to version 2.23.1 for stability -->
+  <script charset="utf-8" src="https://static.line-scdn.net/liff/2.23.1/sdk.js"></script>
 </head>
 <body>
   <div class="container">
