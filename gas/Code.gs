@@ -219,7 +219,16 @@ function generateLogId() {
   }
   
   var lastId = sheet.getRange(lastRow, 1).getValue();
-  var lastNum = parseInt(lastId.replace('log_', '')) || 0;
+  
+  // ID フォーマットの検証（log_XXX 形式であることを確認）
+  if (typeof lastId !== 'string' || !lastId.match(/^log_\d+$/)) {
+    Logger.log('Warning: Invalid log ID format in last row: ' + lastId + '. Generating from row count.');
+    // 不正な形式の場合は、行数から生成
+    var nextNum = lastRow; // ヘッダーを除いた行数
+    return 'log_' + String(nextNum).padStart(3, '0');
+  }
+  
+  var lastNum = parseInt(lastId.replace('log_', ''), 10);
   var nextNum = lastNum + 1;
   
   return 'log_' + String(nextNum).padStart(3, '0');
