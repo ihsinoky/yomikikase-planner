@@ -20,13 +20,19 @@
 - ✅ Logs シートへの書き込み（`logToSheet` 関数）
 - ✅ `withLock(fn)` - LockService ラッパー
 - ✅ 例外時の自動ログ記録
+- ✅ LIFF SDK 統合（index.html）
+- ✅ LIFF 初期化フロー（liff.init → isLoggedIn → login）
+- ✅ ユーザープロフィール表示（userId, displayName）
+- ✅ 外部ブラウザ対応（自動ログインリダイレクト）
+- ✅ GAS Health API 呼び出しと結果表示
+- ✅ デバッグ情報の動的表示（環境、OS、LINEバージョン等）
 
 ### Sprint 2 以降で実装予定
 
-- ⏳ アンケートデータの取得
-- ⏳ 回答データの保存
-- ⏳ LIFF 初期化と認証
-- ⏳ ユーザープロフィール管理
+- ⏳ アンケートデータの取得（LIFF画面での表示）
+- ⏳ 回答データの保存（LIFFからGASへ）
+- ⏳ ユーザープロフィール管理（学年・クラス情報）
+- ⏳ Spreadsheetとの本格的な連携
 
 ## デプロイ手順
 
@@ -66,7 +72,36 @@
 4. 「デプロイ」をクリック
 5. **ウェブアプリの URL** をコピー（後で使用）
 
-### 5. 動作確認
+### 5. LIFF アプリの設定（オプション - Sprint 1 で動作確認する場合）
+
+LIFF 機能をテストする場合は、LINE Developers Console で LIFF アプリを設定します:
+
+1. [LINE Developers Console](https://developers.line.biz/console/) にアクセス
+2. プロバイダーとチャネルを作成（まだの場合）
+3. チャネル設定画面で「LIFF」タブを選択
+4. 「追加」ボタンをクリック
+5. LIFF アプリ情報を入力:
+   - **LIFF アプリ名**: `読み聞かせプランナー`
+   - **サイズ**: `Full`
+   - **エンドポイント URL**: `https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec` (手順4でコピーしたURL)
+   - **Scope**: `profile`, `openid` にチェック
+   - **ボットリンク機能**: オプション（任意）
+6. 「追加」をクリック
+7. 生成された **LIFF ID** をコピー（`1234567890-abcdefgh` 形式）
+
+LIFF ID を取得したら、以下のURLでアクセス可能になります:
+
+```
+https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec?liffId=YOUR_LIFF_ID
+```
+
+または、LINE公式アカウントのリッチメニューやメッセージに以下のURLを設定:
+
+```
+https://liff.line.me/YOUR_LIFF_ID
+```
+
+### 6. 動作確認
 
 #### ヘルスチェック API
 
@@ -95,6 +130,19 @@ https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec
 ```
 
 「読み聞かせプランナー」のページが表示されることを確認。
+
+**LIFF ID を指定する場合** (Sprint 1 で実装):
+
+```
+https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec?liffId=YOUR_LIFF_ID
+```
+
+この場合、以下の動作が行われます:
+1. LIFF SDK が初期化される
+2. ログイン状態をチェックし、未ログインの場合は自動的にLINEログインページにリダイレクト
+3. ログイン後、ユーザープロフィール（userId, displayName）が表示される
+4. GAS Health API が自動的に呼び出され、結果が表示される
+5. デバッグ情報（OS、LINEバージョン、起動環境等）が表示される
 
 #### ログの確認
 
