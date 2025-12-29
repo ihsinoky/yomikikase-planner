@@ -131,7 +131,7 @@
         
         statusEl.textContent = 'LIFF を初期化中...';
         // LIFF ID の長さをチェックしてから表示
-        const liffIdDisplay = liffId.length > 10 ? liffId.substring(0, 10) + '...' : liffId;
+        const liffIdDisplay = (liffId && liffId.length > 10) ? liffId.substring(0, 10) + '...' : liffId;
         addDebugInfo('LIFF ID', liffIdDisplay);
         
         // LIFF 初期化
@@ -243,8 +243,8 @@
     
     // HTML エスケープ
     function escapeHtml(text) {
-      // null/undefined チェック
-      if (text == null) {
+      // null/undefined チェック（意図的に両方をチェック）
+      if (text === null || text === undefined) {
         return '';
       }
       // 文字列に変換
