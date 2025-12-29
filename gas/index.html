@@ -101,6 +101,9 @@
 
   <script>
     // Sprint 1: LIFF 初期化とヘルスチェック実装
+    // 定数定義
+    const LOGIN_REDIRECT_DELAY_MS = 2000; // ユーザーがメッセージを読む時間を確保
+    
     document.addEventListener('DOMContentLoaded', async function() {
       const statusEl = document.getElementById('status');
       
@@ -116,13 +119,14 @@
         // LIFF ID を取得（GAS のプロパティサービスまたは環境変数から設定することを想定）
         // Sprint 1では、まずハードコードまたはクエリパラメータで LIFF ID を受け取る
         const urlParams = new URLSearchParams(window.location.search);
-        const liffId = urlParams.get('liffId') || 'YOUR-LIFF-ID-HERE';
+        const liffId = urlParams.get('liffId');
         
-        if (liffId === 'YOUR-LIFF-ID-HERE') {
+        // LIFF ID の検証: 未設定、空文字、または無効な形式をチェック
+        if (!liffId || liffId === 'YOUR_LIFF_ID_HERE' || liffId.length < 10) {
           statusEl.className = 'status';
-          statusEl.textContent = 'ℹ LIFF ID が未設定です。URLに ?liffId=YOUR_LIFF_ID を追加してください。';
+          statusEl.textContent = 'ℹ LIFF ID が未設定です。URLに ?liffId=YOUR_LIFF_ID_HERE を追加してください。';
           addDebugInfo('環境', 'LIFF ID 未設定');
-          addDebugInfo('ヒント', 'URLパラメータ: ?liffId=YOUR_LIFF_ID');
+          addDebugInfo('ヒント', 'URLパラメータ: ?liffId=YOUR_LIFF_ID_HERE');
           
           // LIFF ID なしでも health チェックは実行
           await checkHealth();
@@ -130,8 +134,10 @@
         }
         
         statusEl.textContent = 'LIFF を初期化中...';
-        // LIFF ID の長さをチェックしてから表示
-        const liffIdDisplay = (liffId && liffId.length > 10) ? liffId.substring(0, 10) + '...' : liffId;
+        // LIFF ID の長さと型をチェックしてから表示
+        const liffIdDisplay = (liffId && typeof liffId === 'string' && liffId.length > 10) 
+          ? liffId.substring(0, 10) + '...' 
+          : liffId;
         addDebugInfo('LIFF ID', liffIdDisplay);
         
         // LIFF 初期化
@@ -143,10 +149,10 @@
           statusEl.textContent = '未ログイン - ログインページにリダイレクトします...';
           addDebugInfo('状態', '未ログイン（外部ブラウザまたは初回起動）');
           
-          // 外部ブラウザ対策: login() を呼ぶ
+          // 外部ブラウザ対策: ユーザーがメッセージを読む時間を確保してからリダイレクト
           setTimeout(() => {
             liff.login();
-          }, 2000);
+          }, LOGIN_REDIRECT_DELAY_MS);
           return;
         }
         
@@ -200,7 +206,7 @@
         
         // HTTP ステータスをチェック
         if (!response.ok) {
-          addDebugInfo('GAS Health', '✗ HTTPエラー: ' + response.status);
+          addDebugInfo('GAS Health', '✗ HTTPエラー: ' + response.status + ' ' + response.statusText);
           return;
         }
         
@@ -210,7 +216,7 @@
           addDebugInfo('GAS Health', '✓ OK - ' + data.message);
           addDebugInfo('タイムスタンプ', data.timestamp);
         } else {
-          addDebugInfo('GAS Health', '✗ 失敗');
+          addDebugInfo('GAS Health', '✗ 失敗: ' + (data.message || '不明なエラー'));
         }
       } catch (err) {
         addDebugInfo('GAS Health', '✗ エラー: ' + err.message);
@@ -243,7 +249,7 @@
     
     // HTML エスケープ
     function escapeHtml(text) {
-      // null/undefined チェック（意図的に両方をチェック）
+      // null と undefined を明示的にチェック（可読性のため）
       if (text === null || text === undefined) {
         return '';
       }
