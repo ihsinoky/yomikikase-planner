@@ -25,6 +25,7 @@
 
 GAS Web App の実装とデプロイ手順：
 
+- **[セットアップ手順書](docs/setup.md)** - 環境構築の完全ガイド（Spreadsheet / GAS / LIFF）
 - **[GAS ディレクトリ](gas/)** - Apps Script のコードとデプロイ手順
 - **主な機能**: HTML配信、health API、Logsシート記録、LockService ラッパー
 
