@@ -14,6 +14,17 @@
 - 参加者UI：LIFF（静的HTML/JS、依存最小）
 - 管理UI：まずは Spreadsheet（必要最小限の運用）
 
+### 🎉 Sprint 1 完了（2025年12月29日）
+
+Sheets + GAS Web App + LIFF の最小構成が完成しました！
+
+- ✅ **Spreadsheet テンプレート確定** - 6タブのデータモデルとCSVテンプレート
+- ✅ **GAS Web App 骨格実装** - HTML配信、health API、ログ/ロック機能
+- ✅ **LIFF 初期画面実装** - ログイン、ユーザー識別、疎通確認
+- ✅ **セットアップ手順完備** - 数ヶ月後でも再開できる詳細ドキュメント
+
+詳細は **[Sprint 1 完了報告](docs/sprint1-completion-report.md)** をご覧ください。
+
 ### 📊 データ構造・テンプレート
 
 新方式のデータ構造は以下で確認できます：
@@ -27,6 +38,7 @@ GAS Web App の実装とデプロイ手順：
 
 - **[セットアップ手順書](docs/setup.md)** - 環境構築の完全ガイド（Spreadsheet / GAS / LIFF）
 - **[GAS ディレクトリ](gas/)** - Apps Script のコードとデプロイ手順
+- **[動作確認](gas/VERIFICATION.md)** - デプロイ後の動作確認チェックリスト
 - **主な機能**: HTML配信、health API、Logsシート記録、LockService ラッパー
 
 ### 旧実装（Next.js/Prisma）の参照先
