@@ -74,20 +74,17 @@
 
 ### 5. LIFF アプリの設定（オプション - Sprint 1 で動作確認する場合）
 
-LIFF 機能をテストする場合は、LINE Developers Console で LIFF アプリを設定します:
+LINE ミニアプリ機能をテストする場合は、LINE Developers Console で LINE ミニアプリチャネルを設定します:
 
 1. [LINE Developers Console](https://developers.line.biz/console/) にアクセス
-2. プロバイダーとチャネルを作成（まだの場合）
-3. チャネル設定画面で「LIFF」タブを選択
-4. 「追加」ボタンをクリック
-5. LIFF アプリ情報を入力:
-   - **LIFF アプリ名**: `読み聞かせプランナー`
-   - **サイズ**: `Full`
-   - **エンドポイント URL**: `https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec` (手順4でコピーしたURL)
-   - **Scope**: `profile`, `openid` にチェック
-   - **ボットリンク機能**: オプション（任意）
-6. 「追加」をクリック
-7. 生成された **LIFF ID** をコピー（`1234567890-abcdefgh` 形式）
+2. プロバイダーを作成（まだの場合）
+3. 「Create a new channel」→「LINE ミニアプリ」を選択
+4. 必須項目を入力してチャネル作成
+5. チャネル設定画面で **Developing タブ** を選択
+6. Basic settings セクションで以下を設定:
+   - **Endpoint URL**: `https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec` (手順4でコピーしたURL)
+7. 「Save」をクリック
+8. Developing タブに表示されている **LIFF ID** をコピー（`1234567890-abcdefgh` 形式）
 
 LIFF ID を取得したら、以下のURLでアクセス可能になります:
 
@@ -95,11 +92,13 @@ LIFF ID を取得したら、以下のURLでアクセス可能になります:
 https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec?liffId=YOUR_LIFF_ID
 ```
 
-または、LINE公式アカウントのリッチメニューやメッセージに以下のURLを設定:
+または、LINE のトークやリッチメニューに以下の URL を設定:
 
 ```
-https://liff.line.me/YOUR_LIFF_ID
+https://miniapp.line.me/YOUR_LIFF_ID
 ```
+
+（従来形式の `https://liff.line.me/YOUR_LIFF_ID` も引き続き使用可能）
 
 ### 6. 動作確認
 
