@@ -229,9 +229,8 @@ LINE ミニアプリ（LIFF 統合）チャネルを作成し、GAS Web App と�
 - **地域制限**: LINE ミニアプリは、サービス提供地域によって作成に制約がある場合があります
 - **日本での作成**: 日本で作成する場合、Business ID との連携や LINE アカウント認証が必要になる場合があります
 - **制限がある場合の対処**: 
-  - Business ID を作成して LINE アカウントと連携する
-  - 他の地域（例: Taiwan, Thailand）で作成することも可能（ただし地域によって機能が異なる場合があります）
-  - 詳細は [LINE ミニアプリ開発ガイド](https://developers.line.biz/ja/docs/line-mini-app/develop/develop-overview/) を参照
+  - Business ID を作成して LINE アカウントと連携する手順については、[LINE Developers ヘルプセンター](https://developers.line.biz/ja/faq/)を参照
+  - 作成が困難な場合は、まず未認証のまま開発を進めることも可能です（詳細は[開発ガイド](https://developers.line.biz/ja/docs/line-mini-app/develop/develop-overview/)を参照）
 
 ### 3.4. 内部チャネルと LIFF ID の理解
 
@@ -283,15 +282,19 @@ LINE ミニアプリは、開発・審査・本番の3つの **内部チャネ�
 
 #### 3.6.2. 内部チャネルと LIFF ID の対応
 
-各内部チャネルには異なる LIFF ID が発行されます:
+各内部チャネルには異なる LIFF ID が発行されます。
 
+**例**（実際の値は異なります）:
 ```
-Developing チャネル → 1234567890-abcdefgh（開発用）
-Review チャネル     → 1234567890-ijklmnop（審査用）
-Published チャネル  → 1234567890-qrstuvwx（本番用）
+Developing チャネル → 1234567890-abcdefgh（開発用、チャネル作成時に自動発行）
+Review チャネル     → 1234567890-ijklmnop（審査申請時に自動発行）
+Published チャネル  → 1234567890-qrstuvwx（公開承認後に自動発行）
 ```
 
-**本プロジェクトでは、まず Developing チャネルの LIFF ID を使用します。**
+**注意**: 
+- Developing チャネルの LIFF ID はチャネル作成時に自動的に発行されます
+- Review と Published チャネルの LIFF ID は、それぞれ審査申請時・公開承認後に発行されます
+- **本プロジェクトでは、まず Developing チャネルの LIFF ID を使用します**
 
 ### 3.7. LIFF URL の確認
 
@@ -567,10 +570,13 @@ LIFF 初期化エラー: Invalid liffId
 **解決方法**:
 1. LINE Developers Console で LINE ミニアプリのチャネル設定を開く
 2. Developing タブを選択
-3. 「Scopes & Permissions」セクションで以下が有効になっているか確認:
+3. 「Scopes & Permissions」セクションを探す（Basic settings の下部にあります）
+4. 以下のスコープが有効になっているか確認:
    - `profile` - ユーザーの表示名とプロフィール画像を取得
    - `openid` - OpenID Connect を使用したユーザー識別
-4. 有効になっていない場合は追加して保存
+5. 有効になっていない場合は、チェックボックスをオンにして「Save」をクリック
+
+**注意**: LINE ミニアプリでは、チャネル作成時にデフォルトで `profile` と `openid` のスコープが有効になっているはずですが、何らかの理由で無効になっている場合はこの手順で有効化してください。
 
 ### 6.5. 外部ブラウザからアクセスすると「ログインが必要です」が無限ループする
 
