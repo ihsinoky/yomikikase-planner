@@ -726,7 +726,7 @@ LINE ミニアプリの詳細については、以下の公式ドキュメント
 
 - **[LINE ミニアプリとは](https://developers.line.biz/ja/docs/line-mini-app/discover/introduction/)** - LINE ミニアプリの概要と LIFF 統合について
 - **[LINE ミニアプリ：開発を始めよう](https://developers.line.biz/ja/docs/line-mini-app/develop/develop-overview/)** - チャネル作成手順・制約・未認証として利用可能な範囲
-- **[LINE Developers Console Guide for LINE MINI App](https://developers.line.biz/en/docs/line-mini-app/discover/console-guide/)** - 内部チャネル、LIFF ID、Endpoint URL の詳細（英語）
+- **[LINE Developers Console Guide for LINE Mini App](https://developers.line.biz/en/docs/line-mini-app/discover/console-guide/)** - 内部チャネル、LIFF ID、Endpoint URL の詳細（英語）
 - **[LIFF ドキュメント](https://developers.line.biz/ja/docs/liff/)** - LIFF SDK の使い方（LINE ミニアプリでも使用）
 
 ---
