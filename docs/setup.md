@@ -8,7 +8,7 @@
 - [前提条件](#前提条件)
 - [1. Google Spreadsheet の作成](#1-google-spreadsheet-の作成)
 - [2. Google Apps Script の作成・デプロイ](#2-google-apps-script-の作成デプロイ)
-- [3. LINE Developers での LIFF 作成](#3-line-developers-での-liff-作成)
+- [3. LINE Developers での LINE ミニアプリ作成](#3-line-developers-での-line-ミニアプリ作成)
 - [4. 設定値の登録](#4-設定値の登録)
 - [5. 動作確認](#5-動作確認)
 - [6. トラブルシューティング](#6-トラブルシューティング)
@@ -21,9 +21,11 @@
 セットアップを開始する前に、以下を準備してください：
 
 - **Google アカウント**: Spreadsheet と Apps Script を使用するために必要
-- **LINE Developers アカウント**: LIFF アプリを作成するために必要
+- **LINE Developers アカウント**: LINE ミニアプリを作成するために必要
   - [LINE Developers Console](https://developers.line.biz/console/) でアカウント登録を完了させておく
-- **LINE 公式アカウント**: LIFF アプリを配信するチャネルとして必要（無料のMessaging APIチャネルでOK）
+- **（オプション）LINE 公式アカウント**: LINE ミニアプリと連携する場合に使用
+  - Messaging API チャネルとして無料で作成可能
+  - 本プロジェクトでは必須ではありませんが、リッチメニュー等で配信したい場合は作成しておくと便利です
 
 ---
 
@@ -188,16 +190,18 @@ https://script.google.com/macros/s/【デプロイID】/exec?action=health
 
 ---
 
-## 3. LINE Developers での LIFF 作成
+## 3. LINE Developers での LINE ミニアプリ作成
 
-LIFF（LINE Front-end Framework）アプリを作成し、GAS Web App と連携させます。
+LINE ミニアプリ（LIFF 統合）チャネルを作成し、GAS Web App と連携させます。
+
+**⚠️ 重要**: 現在、LINE では新規の LIFF アプリを直接作成することはできません。新規作成は「LINE ミニアプリ」として行う必要があります。LINE ミニアプリは LIFF の機能を統合しており、より高度な機能を提供します。
 
 ### 3.1. LINE Developers Console にアクセス
 
 1. [LINE Developers Console](https://developers.line.biz/console/) にアクセス
 2. LINE アカウントでログイン
 
-### 3.2. プロバイダーとチャネルの作成
+### 3.2. プロバイダーの作成
 
 #### プロバイダーが未作成の場合
 
@@ -205,60 +209,123 @@ LIFF（LINE Front-end Framework）アプリを作成し、GAS Web App と連携�
 2. プロバイダー名を入力（例: `読み聞かせプランナー`）
 3. 「Create」をクリック
 
-#### チャネルが未作成の場合
+### 3.3. LINE ミニアプリチャネルの作成
 
 1. 作成したプロバイダーを選択
-2. 「Create a Messaging API channel」をクリック
-3. 必須項目を入力:
-   - **Channel type**: Messaging API
-   - **Channel name**: 読み聞かせプランナー
-   - **Channel description**: 幼稚園の読み聞かせ活動管理用アプリ
-   - **Category**: Education
-   - **Subcategory**: 適当なものを選択
-4. 利用規約に同意してチェック
-5. 「Create」をクリック
+2. 「Create a new channel」（新規チャネル作成）をクリック
+3. チャネルタイプで **「LINE ミニアプリ」** を選択
+4. 必須項目を入力:
+   - **App name**: 読み聞かせプランナー
+   - **App description**: 幼稚園の読み聞かせ活動管理用アプリ
+   - **Category**: Education（教育）
+   - **Subcategory**: 適切なものを選択
+   - **Service provided region**: Japan（サービスを提供する地域）
+   - **Email address**: 連絡先メールアドレス
+5. 利用規約に同意してチェック
+6. 「Create」をクリック
 
-### 3.3. LIFF アプリの追加
+#### ⚠️ 作成時の注意点
 
-1. 作成したチャネルの設定画面を開く
-2. 「LIFF」タブを選択
-3. 「Add」（追加）ボタンをクリック
-4. LIFF アプリの情報を入力:
+- **地域制限**: LINE ミニアプリは、サービス提供地域によって作成に制約がある場合があります
+- **日本での作成**: 日本で作成する場合、Business ID との連携や LINE アカウント認証が必要になる場合があります
+- **制限がある場合の対処**: 
+  - Business ID を作成して LINE アカウントと連携する手順については、[LINE Developers ヘルプセンター](https://developers.line.biz/ja/faq/)を参照
+  - 作成が困難な場合は、まず未認証のまま開発を進めることも可能です（詳細は[開発ガイド](https://developers.line.biz/ja/docs/line-mini-app/develop/develop-overview/)を参照）
 
-| 項目 | 設定値 | 説明 |
-|------|--------|------|
-| **LIFF app name** | `読み聞かせプランナー` | LIFF アプリの名前 |
-| **Size** | `Full` | 全画面表示 |
-| **Endpoint URL** | `https://script.google.com/macros/s/【デプロイID】/exec` | 手順 2.4 でメモした Web App URL |
-| **Scope** | `profile`, `openid` | ユーザー情報取得に必要 |
-| **Bot link feature** | `On (Aggressive)` または `Off` | 任意（LINE公式アカウントと連携するかどうか） |
+### 3.4. 内部チャネルと LIFF ID の理解
 
-5. 「Add」（追加）をクリック
+LINE ミニアプリは、開発・審査・本番の3つの **内部チャネル（Internal Channels）** を持ちます:
 
-### 3.4. LIFF ID をメモ
+| 内部チャネル | 用途 | 公開範囲 |
+|-------------|------|---------|
+| **Developing** | 開発・テスト用 | チャネル管理者のみ |
+| **Review** | 審査申請用 | 審査スタッフとテスター |
+| **Published** | 本番公開用 | 一般ユーザー全員 |
 
-LIFF アプリが作成されると、**LIFF ID** が発行されます。
+**重要**: それぞれの内部チャネルには **異なる LIFF ID** が発行されます。開発時は主に **Developing チャネルの LIFF ID** を使用します。
+
+### 3.5. Endpoint URL の設定
+
+各内部チャネルに対して、Endpoint URL（アプリの配信先 URL）を設定します。
+
+#### 3.5.1. Developing チャネルの設定（開発・テスト用）
+
+1. LINE ミニアプリのチャネル設定画面を開く
+2. 「Developing」タブを選択
+3. 「Basic settings」セクションで「Edit」をクリック
+4. 以下を設定:
+   - **Endpoint URL**: `https://script.google.com/macros/s/【デプロイID】/exec`
+     - 手順 2.4 でメモした GAS Web App URL を入力
+   - **Module mode**: Off（本プロジェクトでは使用しない）
+5. 「Save」をクリック
+
+#### 3.5.2. その他のチャネルについて
+
+- **Review / Published チャネル**: 現時点では設定不要です
+- 将来、一般ユーザーに公開する際に、それぞれの Endpoint URL を設定します
+- 開発段階では **Developing チャネル** のみ設定すれば十分です
+
+### 3.6. LIFF ID の取得
+
+#### 3.6.1. Developing チャネルの LIFF ID を取得
+
+1. LINE ミニアプリのチャネル設定画面で「Developing」タブを選択
+2. 「Basic settings」セクションに **LIFF ID** が表示されています
+3. LIFF ID をコピー（`1234567890-abcdefgh` の形式）
+
+📝 **この LIFF ID を後で使うのでコピーしてメモしておいてください。**
 
 **LIFF ID の形式**:
 ```
 1234567890-abcdefgh
 ```
 
-📝 **この LIFF ID を後で使うのでコピーしてメモしておいてください。**
+#### 3.6.2. 内部チャネルと LIFF ID の対応
 
-### 3.5. LIFF URL の確認
+各内部チャネルには異なる LIFF ID が発行されます。
 
-LIFF アプリにアクセスするための URL は以下の形式です:
+**例**（実際の値は異なります）:
 ```
-https://liff.line.me/【LIFF ID】
+Developing チャネル → 1234567890-abcdefgh（開発用、チャネル作成時に自動発行）
+Review チャネル     → 1234567890-ijklmnop（審査申請時に自動発行）
+Published チャネル  → 1234567890-qrstuvwx（公開承認後に自動発行）
+```
+
+**注意**: 
+- Developing チャネルの LIFF ID はチャネル作成時に自動的に発行されます
+- Review と Published チャネルの LIFF ID は、それぞれ審査申請時・公開承認後に発行されます
+- **本プロジェクトでは、まず Developing チャネルの LIFF ID を使用します**
+
+### 3.7. LIFF URL の確認
+
+LINE ミニアプリにアクセスするための URL は以下の形式です:
+
+#### 基本形式（推奨）
+
+```
+https://miniapp.line.me/【LIFF ID】
 ```
 
 **例**:
 ```
-https://liff.line.me/1234567890-abcdefgh
+https://miniapp.line.me/1234567890-abcdefgh
 ```
 
-この URL を LINE 公式アカウントのメッセージやリッチメニューに設定することで、ユーザーがアプリを開けるようになります。
+#### 従来形式（互換性）
+
+従来の LIFF URL 形式も引き続き使用できます:
+```
+https://liff.line.me/【LIFF ID】
+```
+
+**推奨**: 新規作成の場合は `miniapp.line.me` を使用してください。
+
+#### URL の使用方法
+
+この URL を以下の場所に設定することで、ユーザーがアプリを開けるようになります:
+- LINE 公式アカウントのリッチメニュー
+- LINE 公式アカウントのメッセージ（テキスト・カードメッセージ等）
+- LINE のトークで直接送信（テスト用）
 
 ---
 
@@ -294,7 +361,7 @@ https://liff.line.me/1234567890-abcdefgh
 | 設定キー | 説明 | 取得元 | 必須 |
 |---------|------|--------|------|
 | `activeSurveyId` | 現在表示するアンケートのID（LIFF画面で使用） | Surveys シートの surveyId 列 | ○ |
-| `liffId` | LINE LIFF アプリケーション ID | LINE Developers Console | ○ |
+| `liffId` | LINE ミニアプリの LIFF ID（Developing チャネル） | LINE Developers Console の Developing タブ | ○ |
 | `appVersion` | アプリケーションのバージョン番号 | 任意 | △ |
 
 #### その他、運用で追加する可能性がある設定値
@@ -375,28 +442,34 @@ https://liff.line.me/1234567890-abcdefgh
 - [ ] GAS Health が `OK` と表示される
 - [ ] デバッグ情報が表示される
 
-### 5.4. LIFF アプリの確認（LINE アプリ内）
+### 5.4. LINE ミニアプリの確認（LINE アプリ内）
 
-**目的**: LINE アプリから LIFF アプリを起動できるか確認
+**目的**: LINE アプリから LINE ミニアプリを起動できるか確認
 
 **確認方法**:
 
-#### 方法 A: LIFF URL をメッセージで送信
+#### 方法 A: LINE ミニアプリ URL をメッセージで送信
 
 1. LINE アプリで自分自身またはテスト用のユーザーにメッセージを送信
-2. メッセージに以下の URL を記載:
+2. メッセージに以下の URL を記載（Developing チャネルの LIFF ID を使用）:
+   ```
+   https://miniapp.line.me/【LIFF ID】
+   ```
+   または従来形式:
    ```
    https://liff.line.me/【LIFF ID】
    ```
-3. URL をタップして LIFF アプリを開く
+3. URL をタップして LINE ミニアプリを開く
 
-#### 方法 B: LINE 公式アカウントのリッチメニューに設定
+#### 方法 B: LINE 公式アカウントのリッチメニューに設定（オプション）
+
+LINE 公式アカウントを持っている場合:
 
 1. LINE Official Account Manager にアクセス
 2. リッチメニューを作成
-3. アクション設定で LIFF URL を設定:
+3. アクション設定で LINE ミニアプリ URL を設定:
    ```
-   https://liff.line.me/【LIFF ID】
+   https://miniapp.line.me/【LIFF ID】
    ```
 4. リッチメニューを公開
 5. LINE アプリでリッチメニューをタップ
@@ -404,7 +477,7 @@ https://liff.line.me/1234567890-abcdefgh
 #### 確認内容
 
 ✅ **チェックポイント**:
-- [ ] LIFF アプリが開く
+- [ ] LINE ミニアプリが開く
 - [ ] ユーザー情報（userId, displayName）が表示される
 - [ ] GAS Health が `OK` と表示される
 - [ ] デバッグ情報で「起動元」が正しく表示される（例: `utou` = 1対1トーク）
@@ -475,12 +548,15 @@ https://liff.line.me/1234567890-abcdefgh
 LIFF 初期化エラー: Invalid liffId
 ```
 
-**原因**: LIFF ID が正しくない
+**原因**: LIFF ID が正しくない、または間違った内部チャネルの LIFF ID を使用している
 
 **解決方法**:
-1. LINE Developers Console で LIFF ID を確認
-2. Spreadsheet の `Config` シートの `liffId` を正しい値に修正
-3. URL のクエリパラメータ `?liffId=...` が正しいか確認
+1. LINE Developers Console で LINE ミニアプリのチャネル設定を開く
+2. **Developing タブ** を選択して LIFF ID を確認（開発時は Developing チャネルの LIFF ID を使用）
+3. Spreadsheet の `Config` シートの `liffId` を正しい値に修正
+4. URL のクエリパラメータ `?liffId=...` が正しいか確認
+
+**注意**: Review や Published チャネルの LIFF ID は、開発段階では使用しません。
 
 ### 6.4. userId が取得できない
 
@@ -489,12 +565,18 @@ LIFF 初期化エラー: Invalid liffId
 ユーザープロフィールの取得に失敗しました
 ```
 
-**原因**: LIFF アプリの Scope に `profile` が含まれていない
+**原因**: LINE ミニアプリのスコープ設定に問題がある
 
 **解決方法**:
-1. LINE Developers Console で LIFF アプリの設定を開く
-2. 「Scope」に `profile` と `openid` の両方がチェックされているか確認
-3. チェックされていない場合は追加して保存
+1. LINE Developers Console で LINE ミニアプリのチャネル設定を開く
+2. Developing タブを選択
+3. 「Scopes & Permissions」セクションを探す（Basic settings の下部にあります）
+4. 以下のスコープが有効になっているか確認:
+   - `profile` - ユーザーの表示名とプロフィール画像を取得
+   - `openid` - OpenID Connect を使用したユーザー識別
+5. 有効になっていない場合は、チェックボックスをオンにして「Save」をクリック
+
+**注意**: LINE ミニアプリでは、チャネル作成時にデフォルトで `profile` と `openid` のスコープが有効になっているはずですが、何らかの理由で無効になっている場合はこの手順で有効化してください。
 
 ### 6.5. 外部ブラウザからアクセスすると「ログインが必要です」が無限ループする
 
@@ -538,24 +620,27 @@ LIFF 初期化エラー: Invalid liffId
 3. 「バージョン」を「新バージョン」に変更
 4. 「デプロイ」をクリック
 
-✅ **この方法なら URL は変わらず、LIFF の設定変更も不要です。**
+✅ **この方法なら URL は変わらず、LINE ミニアプリの設定変更も不要です。**
 
 #### 新しいデプロイを作成する方法（非推奨）
 
 1. 「デプロイ」→「新しいデプロイ」を実行
 2. 新しい URL が発行される
-3. **LINE Developers Console で LIFF のエンドポイント URL を新しい URL に更新する必要がある**
+3. **LINE Developers Console で LINE ミニアプリのエンドポイント URL を新しい URL に更新する必要がある**
 
-⚠️ **この方法は URL が変わるため、LIFF 設定の更新が必要です。**
+⚠️ **この方法は URL が変わるため、LINE ミニアプリ設定の更新が必要です。**
 
-### 7.3. LIFF エンドポイント URL の変更（新デプロイを作成した場合）
+### 7.3. LINE ミニアプリ Endpoint URL の変更（新デプロイを作成した場合）
 
-新しいデプロイを作成した場合、LIFF のエンドポイント URL を更新する必要があります。
+新しいデプロイを作成した場合、LINE ミニアプリのエンドポイント URL を更新する必要があります。
 
-1. LINE Developers Console で LIFF アプリの設定を開く
-2. 「Edit」（編集）ボタンをクリック
-3. 「Endpoint URL」を新しい GAS Web App URL に変更
-4. 「Update」をクリック
+1. LINE Developers Console で LINE ミニアプリのチャネル設定を開く
+2. **Developing タブ** を選択
+3. 「Basic settings」セクションで「Edit」ボタンをクリック
+4. 「Endpoint URL」を新しい GAS Web App URL に変更
+5. 「Save」をクリック
+
+**注意**: 各内部チャネル（Developing / Review / Published）を使用している場合は、それぞれのチャネルで Endpoint URL を更新してください。
 
 ### 7.4. 権限の再承認が必要な場合
 
@@ -601,12 +686,12 @@ Apps Script で新しい権限が必要な API を使用した場合、再度承
 ✅ **環境の再構築**
 - Google Spreadsheet の作成
 - Apps Script のデプロイ
-- LINE LIFF アプリの設定
+- LINE ミニアプリ（LIFF 統合）チャネルの設定
 
 ✅ **設定値の確認**
 - Spreadsheet ID
 - Web App URL
-- LIFF ID
+- LIFF ID（Developing チャネル）
 - Config シートの設定値
 
 ✅ **動作確認**
@@ -618,11 +703,13 @@ Apps Script で新しい権限が必要な API を使用した場合、再度承
 ✅ **コードの更新とデプロイ**
 - 既存デプロイの更新（URL 変更なし）
 - 新規デプロイの作成（URL 変更あり）
-- LIFF エンドポイント URL の更新
+- LINE ミニアプリ Endpoint URL の更新
 
 ---
 
 ## 関連ドキュメント
+
+### プロジェクト内ドキュメント
 
 さらに詳しい情報は以下を参照してください:
 
@@ -633,6 +720,15 @@ Apps Script で新しい権限が必要な API を使用した場合、再度承
 - **[docs/sheets-schema.md](./sheets-schema.md)** - Spreadsheet の詳細スキーマ
 - **[docs/pivot-plan.md](./pivot-plan.md)** - アーキテクチャ変更の背景
 
+### LINE 公式ドキュメント
+
+LINE ミニアプリの詳細については、以下の公式ドキュメントを参照してください:
+
+- **[LINE ミニアプリとは](https://developers.line.biz/ja/docs/line-mini-app/discover/introduction/)** - LINE ミニアプリの概要と LIFF 統合について
+- **[LINE ミニアプリ：開発を始めよう](https://developers.line.biz/ja/docs/line-mini-app/develop/develop-overview/)** - チャネル作成手順・制約・未認証として利用可能な範囲
+- **[LINE Developers Console Guide for LINE Mini App](https://developers.line.biz/en/docs/line-mini-app/discover/console-guide/)** - 内部チャネル、LIFF ID、Endpoint URL の詳細（英語）
+- **[LIFF ドキュメント](https://developers.line.biz/ja/docs/liff/)** - LIFF SDK の使い方（LINE ミニアプリでも使用）
+
 ---
 
 ## 変更履歴
@@ -640,3 +736,4 @@ Apps Script で新しい権限が必要な API を使用した場合、再度承
 | 日付 | 変更内容 | 担当 |
 |------|---------|------|
 | 2025-12-29 | 初版作成: セットアップ手順書 | @copilot |
+| 2026-01-05 | LINE ミニアプリ（LIFF 統合）チャネル作成前提へ更新 | @copilot |

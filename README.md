@@ -36,7 +36,7 @@ Sheets + GAS Web App + LIFF の最小構成が完成しました！
 
 GAS Web App の実装とデプロイ手順：
 
-- **[セットアップ手順書](docs/setup.md)** - 環境構築の完全ガイド（Spreadsheet / GAS / LIFF）
+- **[セットアップ手順書](docs/setup.md)** - 環境構築の完全ガイド（Spreadsheet / GAS / LINE ミニアプリ）
 - **[GAS ディレクトリ](gas/)** - Apps Script のコードとデプロイ手順
 - **[動作確認](gas/VERIFICATION.md)** - デプロイ後の動作確認チェックリスト
 - **主な機能**: HTML配信、health API、Logsシート記録、LockService ラッパー
