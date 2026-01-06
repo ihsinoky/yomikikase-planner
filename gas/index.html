@@ -77,7 +77,7 @@
     }
   </style>
   <!-- LIFF SDK (CDN) - pinned to version 2.23.1 for stability -->
-  <script charset="utf-8" src="https://static.line-scdn.net/liff/2.23.1/sdk.js" id="liff-sdk" onerror="window.liffSdkLoadError = 'LIFF SDK の読み込みに失敗しました（ネットワークエラー）'; console.error('LIFF SDK script load error');"></script>
+  <script charset="utf-8" src="https://static.line-scdn.net/liff/2.23.1/sdk.js" id="liff-sdk" onerror="window.liffSdkLoadError = 'LIFF SDK の読み込みに失敗しました'; console.error('LIFF SDK script load error');"></script>
 </head>
 <body>
   <div class="container">
@@ -104,31 +104,65 @@
     // 定数定義
     const LOGIN_REDIRECT_DELAY_MS = 2000; // ユーザーがメッセージを読む時間を確保
     const LIFF_SDK_LOAD_TIMEOUT_MS = 10000; // LIFF SDK 読み込みタイムアウト時間
-    const LIFF_SDK_CHECK_INTERVAL_MS = 100; // LIFF SDK 確認間隔 (100ms は UI の応答性とリソース消費のバランス)
     
     /**
      * LIFF SDK が利用可能になるまで待機
-     * @returns {Promise<boolean>} LIFF SDK が利用可能な場合 true、タイムアウトの場合 false
+     * イベントベースのアプローチでスクリプトの読み込みを監視し、ポーリングを回避
+     * @returns {Promise<boolean>} LIFF SDK が利用可能な場合 true、タイムアウトまたはエラーの場合 false
      */
     async function waitForLiffSdk() {
-      const startTime = Date.now();
-      
-      while (Date.now() - startTime < LIFF_SDK_LOAD_TIMEOUT_MS) {
-        // スクリプトの読み込みエラーが発生している場合は即座に失敗
-        if (window.liffSdkLoadError) {
-          return false;
-        }
-        
-        // LIFF SDK が利用可能かチェック
-        if (typeof liff !== 'undefined') {
-          return true;
-        }
-        
-        // 少し待ってから再チェック
-        await new Promise(resolve => setTimeout(resolve, LIFF_SDK_CHECK_INTERVAL_MS));
+      // 既に読み込みエラーが発生している場合は即座に失敗
+      if (window.liffSdkLoadError) {
+        return false;
       }
-      
-      return false;
+
+      // 既に LIFF SDK が利用可能な場合は即座に成功
+      if (typeof window.liff !== 'undefined') {
+        return true;
+      }
+
+      const scriptEl = document.getElementById('liff-sdk');
+      if (!scriptEl) {
+        // スクリプト要素が存在しない場合は失敗
+        return false;
+      }
+
+      return new Promise(resolve => {
+        let settled = false;
+
+        function cleanup() {
+          if (settled) {
+            return;
+          }
+          settled = true;
+          scriptEl.removeEventListener('load', onLoad);
+          scriptEl.removeEventListener('error', onError);
+          clearTimeout(timeoutId);
+        }
+
+        function onLoad() {
+          cleanup();
+          // load 発火時点で liff が利用可能かどうかを最終確認
+          resolve(typeof window.liff !== 'undefined');
+        }
+
+        function onError() {
+          // onerror は script タグのインライン属性でも扱われているが、
+          // 念のためここでも失敗として扱う
+          window.liffSdkLoadError = window.liffSdkLoadError || 'LIFF SDK の読み込みに失敗しました';
+          cleanup();
+          resolve(false);
+        }
+
+        const timeoutId = setTimeout(() => {
+          cleanup();
+          // タイムアウト時点で liff が利用可能なら成功とみなす
+          resolve(typeof window.liff !== 'undefined');
+        }, LIFF_SDK_LOAD_TIMEOUT_MS);
+
+        scriptEl.addEventListener('load', onLoad);
+        scriptEl.addEventListener('error', onError);
+      });
     }
     
     document.addEventListener('DOMContentLoaded', async function() {
@@ -142,12 +176,12 @@
         statusEl.className = 'status error';
         if (window.liffSdkLoadError) {
           statusEl.textContent = '✗ ' + window.liffSdkLoadError;
-          addDebugInfo('環境', window.liffSdkLoadError);
-          addDebugInfo('原因', 'ネットワーク接続を確認してください');
+          addDebugInfo('エラー種別', 'スクリプト読み込みエラー');
+          addDebugInfo('対処方法', 'ネットワーク接続を確認してください');
         } else {
           statusEl.textContent = '✗ LIFF SDK が読み込まれていません';
-          addDebugInfo('環境', 'LIFF SDK 読み込みタイムアウト');
-          addDebugInfo('原因', 'ネットワークが遅いか、CDN にアクセスできない可能性があります');
+          addDebugInfo('エラー種別', 'LIFF SDK 読み込みタイムアウト');
+          addDebugInfo('対処方法', 'ネットワークが遅いか、CDN にアクセスできない可能性があります');
         }
         return;
       }
