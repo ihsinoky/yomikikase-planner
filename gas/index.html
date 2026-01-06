@@ -77,7 +77,8 @@
     }
   </style>
   <!-- LIFF SDK (CDN) - pinned to version 2.23.1 for stability -->
-  <script charset="utf-8" src="https://static.line-scdn.net/liff/2.23.1/sdk.js" id="liff-sdk" onerror="window.liffSdkLoadError = 'LIFF SDK の読み込みに失敗しました'; console.error('LIFF SDK script load error');"></script>
+  <!-- SRI hash ensures script integrity and protects against CDN compromise -->
+  <script charset="utf-8" src="https://static.line-scdn.net/liff/2.23.1/sdk.js" id="liff-sdk" integrity="sha384-OLBgp1GsljhM2TJ+sbHjaiH9txEUvgdDTAzHv2P24donTt6/529l+9Ua0vFImLlb" crossorigin="anonymous" onerror="window.liffSdkLoadError = 'LIFF SDK の読み込みに失敗しました'; console.error('LIFF SDK script load error');"></script>
 </head>
 <body>
   <div class="container">
