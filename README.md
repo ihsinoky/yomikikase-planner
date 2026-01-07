@@ -41,6 +41,14 @@ GAS Web App の実装とデプロイ手順：
 - **[動作確認](gas/VERIFICATION.md)** - デプロイ後の動作確認チェックリスト
 - **主な機能**: HTML配信、health API、Logsシート記録、LockService ラッパー
 
+### 📱 GitHub Pages 静的 LIFF PoC
+
+GitHub Pages で静的 LIFF を配信する PoC（概念実証）：
+
+- **[GitHub Pages LIFF PoC 手順書](docs/github-pages-liff-poc.md)** - GitHub Pages セットアップと LINE 連携の完全ガイド
+- **[miniapp-poc ディレクトリ](docs/miniapp-poc/)** - 静的 LIFF アプリケーションの最小実装
+- **目的**: GAS 配信の代替として、GitHub Pages 上で LIFF の動作確認を行う
+
 ### 旧実装（Next.js/Prisma）の参照先
 
 当初のNext.js/Prismaベースの実装は、以下のブランチ・タグで保存されています：
