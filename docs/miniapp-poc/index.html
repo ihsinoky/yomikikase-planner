@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LIFF PoC - 読み聞かせプランナー</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: #f5f5f5;
+      color: #333;
+      padding: 16px;
+      line-height: 1.6;
+    }
+    
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 8px;
+      padding: 24px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    h1 {
+      font-size: 24px;
+      margin-bottom: 16px;
+      color: #06c755;
+    }
+    
+    .status {
+      padding: 12px;
+      background-color: #e8f5e9;
+      border-left: 4px solid #4caf50;
+      border-radius: 4px;
+      margin-bottom: 24px;
+    }
+    
+    .status.loading {
+      background-color: #fff3e0;
+      border-left-color: #ff9800;
+    }
+    
+    .status.error {
+      background-color: #ffebee;
+      border-left-color: #f44336;
+    }
+    
+    .info-section {
+      margin-bottom: 24px;
+      padding: 16px;
+      background-color: #f9f9f9;
+      border-radius: 4px;
+    }
+    
+    .info-section h2 {
+      font-size: 18px;
+      margin-bottom: 12px;
+      color: #555;
+    }
+    
+    .info-section p {
+      margin-bottom: 8px;
+      color: #666;
+      word-break: break-all;
+    }
+    
+    .footer {
+      margin-top: 32px;
+      padding-top: 16px;
+      border-top: 1px solid #e0e0e0;
+      text-align: center;
+      color: #999;
+      font-size: 14px;
+    }
+    
+    .log-entry {
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      padding: 4px 0;
+      border-bottom: 1px solid #eee;
+    }
+    
+    .log-entry:last-child {
+      border-bottom: none;
+    }
+    
+    .log-timestamp {
+      color: #999;
+      margin-right: 8px;
+    }
+    
+    .log-level {
+      font-weight: bold;
+      margin-right: 8px;
+    }
+    
+    .log-level.info {
+      color: #2196f3;
+    }
+    
+    .log-level.success {
+      color: #4caf50;
+    }
+    
+    .log-level.error {
+      color: #f44336;
+    }
+    
+    .log-level.warn {
+      color: #ff9800;
+    }
+  </style>
+  <!-- LIFF SDK (CDN edge) -->
+  <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+</head>
+<body>
+  <div class="container">
+    <h1>📚 LIFF PoC - 読み聞かせプランナー</h1>
+    
+    <div id="status" class="status loading">
+      初期化中...
+    </div>
+    
+    <div class="info-section">
+      <h2>ℹ️ このページについて</h2>
+      <p>GitHub Pages で配信される静的 LIFF アプリケーションの PoC です。</p>
+      <p><strong>目的:</strong> liff.init() と liff.getProfile() が正常に動作することを確認</p>
+    </div>
+    
+    <div id="debug-section" class="info-section">
+      <h2>🔍 デバッグログ</h2>
+      <div id="debug-logs"></div>
+    </div>
+    
+    <div class="footer">
+      <p>yomikikase-planner GitHub Pages PoC</p>
+      <p>Powered by LIFF SDK</p>
+    </div>
+  </div>
+
+  <script>
+    // ログ出力用の関数
+    function log(level, message) {
+      const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
+      const logContainer = document.getElementById('debug-logs');
+      const entry = document.createElement('div');
+      entry.className = 'log-entry';
+      entry.innerHTML = `<span class="log-timestamp">${timestamp}</span><span class="log-level ${level}">[${level.toUpperCase()}]</span>${escapeHtml(message)}`;
+      logContainer.appendChild(entry);
+      
+      // コンソールにも出力
+      console.log(`[${level.toUpperCase()}] ${message}`);
+      
+      // 最新のログが見えるようにスクロール
+      entry.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+    
+    function logInfo(message) {
+      log('info', message);
+    }
+    
+    function logSuccess(message) {
+      log('success', message);
+    }
+    
+    function logError(message) {
+      log('error', message);
+    }
+    
+    function logWarn(message) {
+      log('warn', message);
+    }
+    
+    // HTML エスケープ関数
+    function escapeHtml(text) {
+      if (text === null || text === undefined) {
+        return '';
+      }
+      const str = String(text);
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+    
+    // ステータス更新関数
+    function updateStatus(text, type = 'loading') {
+      const statusEl = document.getElementById('status');
+      statusEl.textContent = text;
+      statusEl.className = `status ${type}`;
+    }
+    
+    // LIFF ID の取得（URL パラメータまたはデフォルト値）
+    function getLiffId() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const liffId = urlParams.get('liffId');
+      
+      if (!liffId) {
+        logWarn('LIFF ID が URL パラメータに指定されていません');
+        logInfo('使用方法: ?liffId=YOUR_LIFF_ID を URL に追加してください');
+        return null;
+      }
+      
+      // LIFF ID の基本的なバリデーション
+      if (liffId.length < 10 || !liffId.includes('-')) {
+        logError('無効な LIFF ID 形式です');
+        return null;
+      }
+      
+      return liffId;
+    }
+    
+    // メイン処理
+    async function main() {
+      try {
+        logInfo('ページ読み込み完了');
+        logInfo('LIFF SDK バージョン: ' + (liff.version || 'unknown'));
+        
+        // LIFF ID の取得
+        const liffId = getLiffId();
+        if (!liffId) {
+          updateStatus('❌ LIFF ID が未設定です', 'error');
+          logError('LIFF ID を URL パラメータで指定してください: ?liffId=YOUR_LIFF_ID');
+          return;
+        }
+        
+        logInfo('LIFF ID: ' + liffId.substring(0, 10) + '...');
+        
+        // 現在の URL を表示
+        logInfo('現在の URL: ' + window.location.href);
+        
+        // LIFF 初期化
+        updateStatus('LIFF を初期化中...', 'loading');
+        logInfo('liff.init() を呼び出し中...');
+        
+        await liff.init({
+          liffId: liffId,
+          withLoginOnExternalBrowser: true
+        });
+        
+        logSuccess('✅ liff.init() が成功しました');
+        
+        // 環境情報の取得
+        const isInClient = liff.isInClient();
+        const isLoggedIn = liff.isLoggedIn();
+        const os = liff.getOS();
+        const language = liff.getLanguage();
+        const version = liff.getVersion();
+        const lineVersion = liff.getLineVersion();
+        
+        logInfo('─────────────────────────────');
+        logInfo('📱 環境情報');
+        logInfo('─────────────────────────────');
+        logInfo('isInClient: ' + isInClient + (isInClient ? ' (LINEアプリ内)' : ' (外部ブラウザ)'));
+        logInfo('isLoggedIn: ' + isLoggedIn);
+        logInfo('OS: ' + os);
+        logInfo('Language: ' + language);
+        logInfo('LIFF Version: ' + version);
+        if (lineVersion) {
+          logInfo('LINE Version: ' + lineVersion);
+        }
+        
+        // コンテキスト情報
+        const context = liff.getContext();
+        if (context) {
+          logInfo('Context Type: ' + (context.type || 'unknown'));
+          logInfo('Context viewType: ' + (context.viewType || 'unknown'));
+        }
+        
+        // ログイン状態のチェック
+        if (!isLoggedIn) {
+          updateStatus('未ログイン - ログインページへリダイレクト', 'loading');
+          logWarn('未ログイン状態です');
+          logInfo('2秒後に liff.login() を実行します...');
+          
+          setTimeout(() => {
+            logInfo('liff.login() を呼び出し中...');
+            liff.login();
+          }, 2000);
+          return;
+        }
+        
+        // プロフィール情報の取得
+        logInfo('─────────────────────────────');
+        logInfo('👤 プロフィール取得');
+        logInfo('─────────────────────────────');
+        logInfo('liff.getProfile() を呼び出し中...');
+        
+        const profile = await liff.getProfile();
+        
+        logSuccess('✅ liff.getProfile() が成功しました');
+        logInfo('User ID: ' + profile.userId);
+        logInfo('Display Name: ' + (profile.displayName || '(未設定)'));
+        logInfo('Status Message: ' + (profile.statusMessage || '(未設定)'));
+        logInfo('Picture URL: ' + (profile.pictureUrl ? 'あり' : 'なし'));
+        
+        // プロフィール画像がある場合は表示
+        if (profile.pictureUrl) {
+          const debugSection = document.getElementById('debug-section');
+          const imgSection = document.createElement('div');
+          imgSection.style.marginTop = '16px';
+          imgSection.style.textAlign = 'center';
+          imgSection.innerHTML = `
+            <p style="margin-bottom: 8px; color: #666;">プロフィール画像:</p>
+            <img src="${escapeHtml(profile.pictureUrl)}" alt="Profile" style="width: 100px; height: 100px; border-radius: 50%; border: 2px solid #06c755;">
+          `;
+          debugSection.appendChild(imgSection);
+        }
+        
+        // デコードされた ID トークンの取得（optional）
+        try {
+          const idToken = liff.getDecodedIDToken();
+          if (idToken) {
+            logInfo('─────────────────────────────');
+            logInfo('🔐 ID Token 情報');
+            logInfo('─────────────────────────────');
+            logInfo('Name: ' + (idToken.name || 'N/A'));
+            logInfo('Email: ' + (idToken.email || 'N/A'));
+            logInfo('Sub: ' + idToken.sub);
+          }
+        } catch (e) {
+          logWarn('ID Token 取得をスキップ (取得できない環境)');
+        }
+        
+        // 成功ステータス
+        updateStatus('✅ すべての確認が完了しました', 'success');
+        logSuccess('═══════════════════════════════');
+        logSuccess('PoC 検証完了！');
+        logSuccess('═══════════════════════════════');
+        
+        // 受け入れ条件の確認結果を表示
+        logInfo('');
+        logInfo('📋 受け入れ条件チェック:');
+        logInfo('✓ liff.isInClient() = ' + isInClient);
+        logInfo('✓ liff.init() が resolve した');
+        logInfo('✓ liff.getProfile() が成功した');
+        logInfo('✓ displayName: ' + (profile.displayName || '(未設定)'));
+        logInfo('✓ userId: ' + profile.userId);
+        
+      } catch (error) {
+        updateStatus('❌ エラーが発生しました', 'error');
+        logError('エラー: ' + error.message);
+        logError('Stack: ' + (error.stack || 'N/A'));
+        console.error('LIFF Error:', error);
+        
+        // エラーの種類に応じたヘルプメッセージ
+        if (error.message.includes('endpoint')) {
+          logError('');
+          logError('💡 Endpoint URL の不一致エラーの可能性があります');
+          logError('LINE Developers Console で設定した Endpoint URL を確認してください');
+          logError('Endpoint URL はこのページの URL と一致する必要があります');
+        }
+      }
+    }
+    
+    // ページロード時に実行
+    if (typeof liff !== 'undefined') {
+      document.addEventListener('DOMContentLoaded', main);
+    } else {
+      document.addEventListener('DOMContentLoaded', function() {
+        updateStatus('❌ LIFF SDK が読み込まれていません', 'error');
+        logError('LIFF SDK の読み込みに失敗しました');
+        logError('ネットワーク接続を確認してください');
+      });
+    }
+  </script>
+</body>
+</html>
