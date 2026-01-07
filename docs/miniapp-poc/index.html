@@ -146,6 +146,10 @@
   </div>
 
   <script>
+    // 定数定義
+    const LOGIN_REDIRECT_DELAY_MS = 2000; // ユーザーがメッセージを読む時間を確保
+    const LIFF_ID_PATTERN = /^\d{10}-[a-zA-Z0-9]{8,}$/; // LIFF ID の形式: 10桁の数字 - 8文字以上の英数字
+    
     // ログ出力用の関数
     function log(level, message) {
       const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
@@ -207,9 +211,9 @@
         return null;
       }
       
-      // LIFF ID の基本的なバリデーション
-      if (liffId.length < 10 || !liffId.includes('-')) {
-        logError('無効な LIFF ID 形式です');
+      // LIFF ID の形式バリデーション
+      if (!LIFF_ID_PATTERN.test(liffId)) {
+        logError('無効な LIFF ID 形式です（正しい形式: 1234567890-abcdefgh）');
         return null;
       }
       
@@ -277,12 +281,12 @@
         if (!isLoggedIn) {
           updateStatus('未ログイン - ログインページへリダイレクト', 'loading');
           logWarn('未ログイン状態です');
-          logInfo('2秒後に liff.login() を実行します...');
+          logInfo(`${LOGIN_REDIRECT_DELAY_MS / 1000}秒後に liff.login() を実行します...`);
           
           setTimeout(() => {
             logInfo('liff.login() を呼び出し中...');
             liff.login();
-          }, 2000);
+          }, LOGIN_REDIRECT_DELAY_MS);
           return;
         }
         
@@ -302,15 +306,33 @@
         
         // プロフィール画像がある場合は表示
         if (profile.pictureUrl) {
-          const debugSection = document.getElementById('debug-section');
-          const imgSection = document.createElement('div');
-          imgSection.style.marginTop = '16px';
-          imgSection.style.textAlign = 'center';
-          imgSection.innerHTML = `
-            <p style="margin-bottom: 8px; color: #666;">プロフィール画像:</p>
-            <img src="${escapeHtml(profile.pictureUrl)}" alt="Profile" style="width: 100px; height: 100px; border-radius: 50%; border: 2px solid #06c755;">
-          `;
-          debugSection.appendChild(imgSection);
+          // URL の形式を検証（https で始まることを確認）
+          const isValidUrl = /^https:\/\/.+/.test(profile.pictureUrl);
+          if (isValidUrl) {
+            const debugSection = document.getElementById('debug-section');
+            const imgSection = document.createElement('div');
+            imgSection.style.marginTop = '16px';
+            imgSection.style.textAlign = 'center';
+            
+            const p = document.createElement('p');
+            p.style.marginBottom = '8px';
+            p.style.color = '#666';
+            p.textContent = 'プロフィール画像:';
+            
+            const img = document.createElement('img');
+            img.src = profile.pictureUrl;
+            img.alt = 'Profile';
+            img.style.width = '100px';
+            img.style.height = '100px';
+            img.style.borderRadius = '50%';
+            img.style.border = '2px solid #06c755';
+            
+            imgSection.appendChild(p);
+            imgSection.appendChild(img);
+            debugSection.appendChild(imgSection);
+          } else {
+            logWarn('プロフィール画像URLの形式が無効です');
+          }
         }
         
         // デコードされた ID トークンの取得（optional）
