@@ -152,15 +152,19 @@
     
     // ログ出力用の関数
     function log(level, message) {
+      // level パラメータのバリデーション（CSS class injection 防止）
+      const allowedLevels = ['info', 'success', 'error', 'warn'];
+      const safeLevel = allowedLevels.includes(level) ? level : 'info';
+      
       const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
       const logContainer = document.getElementById('debug-logs');
       const entry = document.createElement('div');
       entry.className = 'log-entry';
-      entry.innerHTML = `<span class="log-timestamp">${timestamp}</span><span class="log-level ${level}">[${level.toUpperCase()}]</span>${escapeHtml(message)}`;
+      entry.innerHTML = `<span class="log-timestamp">${timestamp}</span><span class="log-level ${safeLevel}">[${safeLevel.toUpperCase()}]</span>${escapeHtml(message)}`;
       logContainer.appendChild(entry);
       
       // コンソールにも出力
-      console.log(`[${level.toUpperCase()}] ${message}`);
+      console.log(`[${safeLevel.toUpperCase()}] ${message}`);
       
       // 最新のログが見えるようにスクロール
       entry.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -195,9 +199,13 @@
     
     // ステータス更新関数
     function updateStatus(text, type = 'loading') {
+      // type パラメータのバリデーション（CSS class injection 防止）
+      const allowedTypes = ['loading', 'error', 'success'];
+      const safeType = allowedTypes.includes(type) ? type : 'loading';
+      
       const statusEl = document.getElementById('status');
       statusEl.textContent = text;
-      statusEl.className = `status ${type}`;
+      statusEl.className = `status ${safeType}`;
     }
     
     // LIFF ID の取得（URL パラメータまたはデフォルト値）
