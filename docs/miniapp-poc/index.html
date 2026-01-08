@@ -149,12 +149,13 @@
     // 定数定義
     const LOGIN_REDIRECT_DELAY_MS = 2000; // ユーザーがメッセージを読む時間を確保
     const LIFF_ID_PATTERN = /^\d{10}-[a-zA-Z0-9]{8,}$/; // LIFF ID の形式: 10桁の数字 - 8文字以上の英数字
+    const ALLOWED_LOG_LEVELS = ['info', 'success', 'error', 'warn']; // log() 関数で許可されるレベル
+    const ALLOWED_STATUS_TYPES = ['loading', 'error', 'success']; // updateStatus() 関数で許可されるタイプ
     
     // ログ出力用の関数
     function log(level, message) {
       // level パラメータのバリデーション（CSS class injection 防止）
-      const allowedLevels = ['info', 'success', 'error', 'warn'];
-      const safeLevel = allowedLevels.includes(level) ? level : 'info';
+      const safeLevel = ALLOWED_LOG_LEVELS.includes(level) ? level : 'info';
       
       const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
       const logContainer = document.getElementById('debug-logs');
@@ -200,8 +201,7 @@
     // ステータス更新関数
     function updateStatus(text, type = 'loading') {
       // type パラメータのバリデーション（CSS class injection 防止）
-      const allowedTypes = ['loading', 'error', 'success'];
-      const safeType = allowedTypes.includes(type) ? type : 'loading';
+      const safeType = ALLOWED_STATUS_TYPES.includes(type) ? type : 'loading';
       
       const statusEl = document.getElementById('status');
       statusEl.textContent = text;
