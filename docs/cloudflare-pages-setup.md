@@ -89,7 +89,7 @@
 
 1. デプロイが完了すると「Success」というステータスが表示されます
 2. 「Visit site」ボタンが表示されます
-3. プロジェクトの URL は `https://<プロジェクト名>.pages.dev/` の形式になります
+3. プロジェクトの URL は `https://{プロジェクト名}.pages.dev/` の形式になります
 
 ### 4.2. ページの表示確認
 
@@ -104,7 +104,7 @@
 以下のコマンドで HTTP 200 が返ることを確認できます：
 
 ```bash
-curl -I https://<プロジェクト名>.pages.dev/
+curl -I https://{プロジェクト名}.pages.dev/
 ```
 
 期待される出力：
@@ -201,6 +201,6 @@ Cloudflare Pages は main ブランチへの push を検知して自動的にデ
 - ✅ Cloudflare Pages プロジェクトの作成と GitHub リポジトリの連携
 - ✅ `liff/` ディレクトリからの静的コンテンツ配信
 - ✅ main ブランチへの push による自動デプロイ
-- ✅ `https://<プロジェクト名>.pages.dev/` での公開
+- ✅ `https://{プロジェクト名}.pages.dev/` での公開
 
 デプロイ URL やその他の情報は、Cloudflare Pages のダッシュボードでいつでも確認できます。
