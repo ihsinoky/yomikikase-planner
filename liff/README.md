@@ -5,6 +5,7 @@
 ## 📄 ファイル
 
 - `index.html` - LIFF アプリケーション本体（最小構成）
+- `_routes.json` - Cloudflare Pages Functions のルーティング設定
 
 ## 🎯 目的
 
@@ -62,15 +63,19 @@ https://your-project.pages.dev/?liffId={LIFF_ID}
 
 ### API 呼び出し戦略
 
-将来的な API 実装では、**同一オリジンの `/api/*` エンドポイント**を使用します：
+**Pages Functions による基盤実装が完了しました！** 同一オリジンの `/api/*` エンドポイントを使用します：
 
-- `/api/health` - ヘルスチェック
-- `/api/reservations` - 予約情報の取得・登録
-- `/api/users` - ユーザー情報管理
+- `/api/health` - ヘルスチェック ✅ **実装済み**
+- `/api/reservations` - 予約情報の取得・登録（今後実装予定）
+- `/api/users` - ユーザー情報管理（今後実装予定）
 
 これにより CORS の問題を回避し、シンプルな実装を維持します。
 
-**注意**: 現時点では API は未実装です。この LIFF アプリは `liff.init()` → `liff.getProfile()` までの動作確認のみを目的としています。
+### Pages Functions の仕組み
+
+- **静的コンテンツ**: `liff/` ディレクトリ内のファイル（`index.html` など）は Cloudflare の Edge ネットワークから直接配信
+- **動的 API**: `/api/*` へのリクエストは `functions/api/` 内の Functions で処理
+- **ルーティング制御**: `_routes.json` により Functions の起動を `/api/*` のみに制限し、静的ファイル配信時の不要な Function 起動を回避
 
 ## 🔍 デバッグ
 
@@ -113,6 +118,38 @@ await liff.init({
 - Endpoint URL: Cloudflare Pages のプロジェクト URL
 - liff.init() 実行 URL: Endpoint URL と一致または配下である必要がある
 - 末尾の `/` (スラッシュ) を揃える（リダイレクト回避）
+
+### Pages Functions API のテスト方法
+
+デプロイ後、以下のコマンドで API 動作を確認できます：
+
+```bash
+# ヘルスチェック API のテスト
+curl https://your-project-name.pages.dev/api/health
+
+# 期待される出力
+# {"ok":true}
+
+# HTTP ステータスコードも確認
+curl -i https://your-project-name.pages.dev/api/health
+
+# 期待される出力
+# HTTP/2 200
+# content-type: application/json
+# ...
+# {"ok":true}
+```
+
+静的コンテンツとの違いを確認：
+
+```bash
+# 静的コンテンツ（index.html）のテスト
+curl -I https://your-project-name.pages.dev/
+
+# 期待される出力
+# HTTP/2 200
+# content-type: text/html; charset=utf-8
+```
 
 ## 🐛 トラブルシューティング
 
