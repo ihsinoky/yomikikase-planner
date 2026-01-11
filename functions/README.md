@@ -60,7 +60,7 @@ functions/api/users.js   →  GET /api/users
 
 ```javascript
 // すべての HTTP メソッドに対応
-export async function onRequest(request) {
+export async function onRequest({ request }) {
   return new Response(JSON.stringify({ ok: true }), {
     status: 200,
     headers: { 'Content-Type': 'application/json' }
@@ -68,11 +68,11 @@ export async function onRequest(request) {
 }
 
 // または、HTTP メソッド別に定義
-export async function onRequestGet(request) {
+export async function onRequestGet({ request }) {
   // GET リクエストの処理
 }
 
-export async function onRequestPost(request) {
+export async function onRequestPost({ request }) {
   // POST リクエストの処理
 }
 ```
