@@ -1,0 +1,139 @@
+# Cloudflare Pages Functions
+
+このディレクトリには、Cloudflare Pages Functions の実装が含まれています。
+
+## 📁 ディレクトリ構造
+
+```
+functions/
+└── api/
+    └── health.js      # ヘルスチェック API
+```
+
+## 🎯 Pages Functions とは
+
+Cloudflare Pages Functions は、Cloudflare Pages で動的な API エンドポイントを実装するためのサーバーレス関数です。
+
+### 主な特徴
+
+- **ゼロ設定**: ファイルベースルーティングで自動的にエンドポイントが作成される
+- **高速**: Cloudflare の Edge ネットワークで実行
+- **スケーラブル**: 自動スケーリング、リクエストごとの課金
+- **統合**: 静的コンテンツと同一オリジンで配信（CORS 不要）
+
+## 📄 実装済み API
+
+### `/api/health`
+
+ヘルスチェック用のエンドポイント。API が正常に動作しているかを確認するために使用します。
+
+**ファイル**: `functions/api/health.js`
+
+**リクエスト**:
+```bash
+GET /api/health
+```
+
+**レスポンス**:
+```json
+{
+  "ok": true
+}
+```
+
+**HTTP ステータス**: 200
+
+## 🔧 実装方法
+
+### 基本構造
+
+Cloudflare Pages Functions は、ファイルパスに基づいて自動的にルーティングされます。
+
+```
+functions/api/health.js  →  GET /api/health
+functions/api/users.js   →  GET /api/users
+```
+
+### 関数の定義
+
+各ファイルは `onRequest` または HTTP メソッド別の関数をエクスポートします。
+
+```javascript
+// すべての HTTP メソッドに対応
+export async function onRequest(request) {
+  return new Response(JSON.stringify({ ok: true }), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json' }
+  });
+}
+
+// または、HTTP メソッド別に定義
+export async function onRequestGet(request) {
+  // GET リクエストの処理
+}
+
+export async function onRequestPost(request) {
+  // POST リクエストの処理
+}
+```
+
+### パラメータ
+
+関数は `context` オブジェクトを受け取ります：
+
+```javascript
+export async function onRequest(context) {
+  const {
+    request,    // Request オブジェクト
+    env,        // 環境変数
+    params,     // URL パラメータ
+    data,       // ミドルウェア間のデータ共有
+  } = context;
+  
+  // 処理...
+}
+```
+
+## 🛡️ ルーティング制御
+
+`liff/_routes.json` により、Functions の起動範囲を制御しています：
+
+```json
+{
+  "version": 1,
+  "include": ["/api/*"],
+  "exclude": []
+}
+```
+
+これにより：
+- `/api/*` へのリクエスト → Functions が処理
+- `/` や `/index.html` などの静的ファイル → Edge から直接配信（Functions を起動しない）
+
+## 🧪 ローカル開発
+
+Cloudflare の Wrangler CLI を使用してローカルで開発・テストできます：
+
+```bash
+# Wrangler のインストール（未インストールの場合）
+npm install -g wrangler
+
+# Pages プロジェクトのローカル実行
+wrangler pages dev liff
+
+# ブラウザで確認
+# http://localhost:8788/
+# http://localhost:8788/api/health
+```
+
+## 📚 今後の実装予定
+
+- `/api/reservations` - 予約情報の取得・登録
+- `/api/users` - ユーザー情報管理
+- 認証・認可の実装（LIFF ID Token 検証など）
+
+## 🔗 参考リンク
+
+- [Cloudflare Pages Functions ドキュメント](https://developers.cloudflare.com/pages/functions/)
+- [Pages Functions ルーティング](https://developers.cloudflare.com/pages/functions/routing/)
+- [_routes.json の設定](https://developers.cloudflare.com/pages/functions/routing/#function-invocation-routes)
