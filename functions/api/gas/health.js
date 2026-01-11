@@ -63,8 +63,67 @@ export async function onRequestGet({ request, env }) {
       clearTimeout(timeoutId);
     }
 
-    // Parse the GAS response
-    // Note: GAS always returns HTTP 200, so we check the JSON body for errors
+    // Hybrid error handling: Check both HTTP status and JSON body
+    // This supports both current GAS (always HTTP 200) and future implementations
+    
+    // First check HTTP status code (for future-proofing or non-GAS services)
+    if (!gasResponse.ok) {
+      // Try to parse error response if available
+      const contentType = gasResponse.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        try {
+          const errorData = await gasResponse.json();
+          if (errorData.error === 'Unauthorized') {
+            return new Response(
+              JSON.stringify({
+                ok: false,
+                error: 'Authentication failed with upstream service',
+              }),
+              {
+                status: 502, // Bad Gateway
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+              }
+            );
+          }
+          // Return other errors with parsed message
+          return new Response(
+            JSON.stringify({
+              ok: false,
+              error: 'Upstream service returned an error',
+              message: errorData.error || errorData.message || 'Unknown error',
+              statusCode: gasResponse.status,
+            }),
+            {
+              status: 502, // Bad Gateway
+              headers: {
+                'Content-Type': 'application/json',
+              },
+            }
+          );
+        } catch (e) {
+          // Failed to parse error response, fall through to generic error
+        }
+      }
+      
+      // Generic HTTP error without parseable JSON
+      return new Response(
+        JSON.stringify({
+          ok: false,
+          error: 'Upstream service returned an error',
+          statusCode: gasResponse.status,
+        }),
+        {
+          status: 502, // Bad Gateway
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+    }
+
+    // Parse the JSON response (for current GAS or successful responses)
     const gasData = await gasResponse.json();
     
     // Validate response structure
@@ -72,7 +131,7 @@ export async function onRequestGet({ request, env }) {
       throw new Error('Invalid response format from upstream service');
     }
 
-    // Check if the response indicates an error
+    // Check JSON body for errors (handles current GAS implementation)
     if (gasData.ok === false) {
       // Check if it's an authentication error
       if (gasData.error === 'Unauthorized') {
