@@ -19,7 +19,7 @@ function getApiKey() {
 }
 
 /**
- * クエリパラメータからAPI キーを検証
+ * クエリパラメータから API キーを検証
  * 
  * @param {Object} e - doGet/doPost のイベントオブジェクト
  * @returns {boolean} API キーが有効な場合 true
