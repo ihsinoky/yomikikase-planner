@@ -41,13 +41,21 @@ GAS Web App の実装とデプロイ手順：
 - **[動作確認](gas/VERIFICATION.md)** - デプロイ後の動作確認チェックリスト
 - **主な機能**: HTML配信、health API、Logsシート記録、LockService ラッパー
 
-### 📱 GitHub Pages 静的 LIFF PoC
+### 📱 LIFF 静的アプリケーション
 
-GitHub Pages で静的 LIFF を配信する PoC（概念実証）：
+**主開発場所: [`liff/`](liff/) ディレクトリ（Cloudflare Pages で配信）**
+
+- **[liff/index.html](liff/index.html)** - LIFF アプリケーションの本体（`liff.init()` → `liff.getProfile()` 機能を実装）
+- **[Cloudflare Pages セットアップ手順](docs/cloudflare-pages-setup.md)** - デプロイ手順
+- **今後の実装方針**: API呼び出しは同一オリジンの `/api/*` に寄せる（現時点では未実装）
+
+#### 📚 参考：GitHub Pages 静的 LIFF PoC（過去の成果物）
+
+GitHub Pages で静的 LIFF を配信する PoC（概念実証）として作成されました：
 
 - **[GitHub Pages LIFF PoC 手順書](docs/github-pages-liff-poc.md)** - GitHub Pages セットアップと LINE 連携の完全ガイド
-- **[miniapp-poc ディレクトリ](docs/miniapp-poc/)** - 静的 LIFF アプリケーションの最小実装
-- **目的**: GAS 配信の代替として、GitHub Pages 上で LIFF の動作確認を行う
+- **[miniapp-poc ディレクトリ](docs/miniapp-poc/)** - 静的 LIFF アプリケーションの PoC 実装
+- **位置づけ**: 過去の PoC として参考用に保存。今後の開発は `liff/` で行う
 
 ### 旧実装（Next.js/Prisma）の参照先
 
