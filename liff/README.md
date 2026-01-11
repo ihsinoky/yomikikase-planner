@@ -87,6 +87,8 @@ https://your-project.pages.dev/?liffId={LIFF_ID}
 - ✅ LIFF ID は公開されても問題ありません（開発用 internal channel を使用）
 - ❌ アクセストークン、シークレットキーは含めないでください
 - ❌ 個人情報、ユーザーデータは含めないでください
+- ℹ️ プロフィール画像の URL は LINE の公式 API から取得されます（信頼できるソース）
+- 📝 本番環境では Content Security Policy (CSP) ヘッダーの設定を推奨（Cloudflare Pages で設定可能）
 
 ## 📝 実装メモ
 
