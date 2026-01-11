@@ -9,6 +9,42 @@
 // ========================================
 
 /**
+ * API キーを取得（スクリプトプロパティから）
+ * 
+ * スクリプトプロパティに "API_KEY" を設定してください
+ */
+function getApiKey() {
+  var props = PropertiesService.getScriptProperties();
+  return props.getProperty('API_KEY');
+}
+
+/**
+ * クエリパラメータからAPI キーを検証
+ * 
+ * @param {Object} e - doGet/doPost のイベントオブジェクト
+ * @returns {boolean} トークンが有効な場合 true
+ */
+function validateApiKey(e) {
+  var apiKey = getApiKey();
+  
+  // API キーが未設定の場合は検証をスキップ（後方互換性のため）
+  if (!apiKey) {
+    return true;
+  }
+  
+  // クエリパラメータから apiKey を取得
+  var requestApiKey = e.parameter.apiKey;
+  
+  // API キーがない場合は拒否
+  if (!requestApiKey) {
+    return false;
+  }
+  
+  // API キーを比較
+  return requestApiKey === apiKey;
+}
+
+/**
  * アクティブなスプレッドシートを取得
  */
 function getSpreadsheet() {
@@ -47,6 +83,17 @@ function doGet(e) {
     
     // 簡易ルーティング
     if (action === 'health') {
+      // API キーの検証
+      if (!validateApiKey(e)) {
+        var output = ContentService
+          .createTextOutput(JSON.stringify({
+            ok: false,
+            error: 'Unauthorized'
+          }))
+          .setMimeType(ContentService.MimeType.JSON);
+        // GAS では HTTPステータスコードを設定できないため、エラーメッセージで対応
+        return output;
+      }
       return handleHealthCheck();
     }
     

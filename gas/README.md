@@ -165,10 +165,14 @@ GET https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec
 **ヘルスチェック API**: システムの動作確認
 
 ```
-GET https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec?action=health
+GET https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec?action=health&apiKey=YOUR_API_KEY
 ```
 
-**レスポンス例**:
+**パラメータ**:
+- `action`: `health` (必須)
+- `apiKey`: API キー (スクリプトプロパティに設定されている場合は必須)
+
+**レスポンス例（成功時）**:
 ```json
 {
   "ok": true,
@@ -176,6 +180,19 @@ GET https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec?action=health
   "message": "yomikikase-planner GAS Web App is running"
 }
 ```
+
+**レスポンス例（API キーが不正な場合）**:
+```json
+{
+  "ok": false,
+  "error": "Unauthorized"
+}
+```
+
+**注意**: 
+- スクリプトプロパティに `API_KEY` が設定されている場合、API キーの検証が行われます
+- API キーが未設定の場合は検証をスキップします（後方互換性のため）
+- Cloudflare Pages Functions 経由でアクセスすることを推奨します（`/api/gas/health`）
 
 ### POST /exec?action=saveResponse
 
@@ -232,12 +249,26 @@ Logs シートのデータをクリアします（ヘッダー行は保持）。
 - ✅ LockService による同時書き込み対策
 - ✅ エラーハンドリングとログ記録
 - ✅ try/catch による例外処理
+- ✅ API キーによる認証（スクリプトプロパティで管理）
 
 ### Sprint 2 以降で対応予定
 
 - ⏳ LIFF ID トークン検証
 - ⏳ ユーザー認証・認可
 - ⏳ レート制限
+
+### API キーの設定
+
+GAS への直接アクセスを制限するため、API キーを設定できます：
+
+1. Apps Script エディタで「プロジェクトの設定」（歯車アイコン）を開く
+2. 「スクリプト プロパティ」セクションで「スクリプト プロパティを追加」をクリック
+3. 以下を入力：
+   - **プロパティ**: `API_KEY`
+   - **値**: 安全なランダム文字列（32文字以上推奨）
+4. 保存
+
+詳細は [Cloudflare Secrets 設定手順](../docs/cloudflare-secrets-setup.md) を参照してください。
 
 ## 関連ドキュメント
 
