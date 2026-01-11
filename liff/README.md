@@ -63,7 +63,7 @@ https://your-project.pages.dev/?liffId={LIFF_ID}
 
 ### API 呼び出し戦略
 
-**Pages Functions による API 実装が完了しました！** 同一オリジンの `/api/*` エンドポイントを使用します：
+**Pages Functions による基盤実装が完了しました！** 同一オリジンの `/api/*` エンドポイントを使用します：
 
 - `/api/health` - ヘルスチェック ✅ **実装済み**
 - `/api/reservations` - 予約情報の取得・登録（今後実装予定）
@@ -125,13 +125,13 @@ await liff.init({
 
 ```bash
 # ヘルスチェック API のテスト
-curl https://{プロジェクト名}.pages.dev/api/health
+curl https://your-project-name.pages.dev/api/health
 
 # 期待される出力
 # {"ok":true}
 
 # HTTP ステータスコードも確認
-curl -i https://{プロジェクト名}.pages.dev/api/health
+curl -i https://your-project-name.pages.dev/api/health
 
 # 期待される出力
 # HTTP/2 200
@@ -144,7 +144,7 @@ curl -i https://{プロジェクト名}.pages.dev/api/health
 
 ```bash
 # 静的コンテンツ（index.html）のテスト
-curl -I https://{プロジェクト名}.pages.dev/
+curl -I https://your-project-name.pages.dev/
 
 # 期待される出力
 # HTTP/2 200
