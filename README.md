@@ -47,7 +47,17 @@ GAS Web App の実装とデプロイ手順：
 
 - **[liff/index.html](liff/index.html)** - LIFF アプリケーションの本体（`liff.init()` → `liff.getProfile()` 機能を実装）
 - **[Cloudflare Pages セットアップ手順](docs/cloudflare-pages-setup.md)** - デプロイ手順
-- **今後の実装方針**: API呼び出しは同一オリジンの `/api/*` に寄せる（現時点では未実装）
+- **[Cloudflare Secrets 設定手順](docs/cloudflare-secrets-setup.md)** - GAS プロキシ API のための環境変数設定
+- **実装方針**: フロントエンドは GAS URL を直接参照せず、同一オリジンの `/api/*` のみを呼び出す
+
+#### 🔌 Cloudflare Pages Functions（API プロキシ）
+
+Cloudflare Pages Functions を使用して、GAS Web App への通信を集約しています：
+
+- **[functions/api/gas/health.js](functions/api/gas/health.js)** - GAS ヘルスチェック API へのプロキシ
+- **方針**: JSONP を排除し、普通の JSON API として扱う
+- **セキュリティ**: API キーによる認証（環境変数で管理、Git 管理外）
+- **メリット**: CORS 問題の回避、GAS URL の隠蔽、同一オリジン通信
 
 #### 📚 参考：GitHub Pages 静的 LIFF PoC（過去の成果物）
 

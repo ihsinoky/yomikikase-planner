@@ -7,7 +7,9 @@
 ```
 functions/
 └── api/
-    └── health.js      # ヘルスチェック API
+    ├── health.js      # ヘルスチェック API
+    └── gas/
+        └── health.js  # GAS Web App へのプロキシ（ヘルスチェック）
 ```
 
 ## 🎯 Pages Functions とは
@@ -42,6 +44,45 @@ GET /api/health
 ```
 
 **HTTP ステータス**: 200
+
+### `/api/gas/health`
+
+Google Apps Script Web App のヘルスチェック API へのプロキシ。
+
+**ファイル**: `functions/api/gas/health.js`
+
+**リクエスト**:
+```bash
+GET /api/gas/health
+```
+
+**レスポンス（成功時）**:
+```json
+{
+  "ok": true,
+  "timestamp": "2020-01-01T00:00:00.000Z",
+  "message": "yomikikase-planner GAS Web App is running"
+}
+```
+
+**HTTP ステータス**: 200
+
+**レスポンス（エラー時）**:
+```json
+{
+  "ok": false,
+  "error": "Failed to communicate with upstream service",
+  "message": "..."
+}
+```
+
+**HTTP ステータス**: 502 (Bad Gateway)
+
+**環境変数**:
+- `GAS_BASE_URL`: GAS Web App の URL（例: `https://script.google.com/macros/s/.../exec`）
+- `GAS_API_KEY`: GAS との通信に使用する API キー
+
+**セットアップ**: [Cloudflare Secrets 設定手順](../docs/cloudflare-secrets-setup.md) を参照
 
 ## 🔧 実装方法
 
@@ -128,7 +169,8 @@ wrangler pages dev liff
 
 ## 📚 今後の実装予定
 
-- `/api/reservations` - 予約情報の取得・登録
+- `/api/gas/surveys` - アンケート情報の取得（GAS プロキシ）
+- `/api/gas/responses` - アンケート回答の送信（GAS プロキシ）
 - `/api/users` - ユーザー情報管理
 - 認証・認可の実装（LIFF ID Token 検証など）
 
