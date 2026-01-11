@@ -40,7 +40,13 @@ function validateApiKey(e) {
     return false;
   }
   
-  // API キーを比較
+  // タイミング攻撃を軽減するため、長さを先にチェック
+  if (requestApiKey.length !== apiKey.length) {
+    return false;
+  }
+  
+  // API キーを比較（GAS では組み込みの定数時間比較がないため、単純比較を使用）
+  // 注意: GAS の制約上、完全なタイミング攻撃対策は困難
   return requestApiKey === apiKey;
 }
 

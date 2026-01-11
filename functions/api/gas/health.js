@@ -50,10 +50,18 @@ export async function onRequestGet({ request, env }) {
     gasUrl.searchParams.set('action', 'health');
     gasUrl.searchParams.set('apiKey', gasApiKey);
 
-    // Make request to GAS
-    const gasResponse = await fetch(gasUrl.toString(), {
-      method: 'GET',
-    });
+    // Make request to GAS with timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+    
+    try {
+      var gasResponse = await fetch(gasUrl.toString(), {
+        method: 'GET',
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timeoutId);
+    }
 
     // Check if GAS returned a successful response
     if (!gasResponse.ok) {
@@ -97,9 +105,15 @@ export async function onRequestGet({ request, env }) {
       );
     }
 
-    // Parse and return the GAS response
+    // Parse and validate the GAS response
     const gasData = await gasResponse.json();
+    
+    // Validate response structure
+    if (typeof gasData !== 'object' || gasData === null) {
+      throw new Error('Invalid response format from upstream service');
+    }
 
+    // Forward the response as-is
     return new Response(
       JSON.stringify(gasData),
       {
@@ -110,6 +124,23 @@ export async function onRequestGet({ request, env }) {
       }
     );
   } catch (error) {
+    // Handle timeout errors specifically
+    if (error.name === 'AbortError') {
+      return new Response(
+        JSON.stringify({
+          ok: false,
+          error: 'Upstream service timeout',
+          message: 'Request to GAS took too long',
+        }),
+        {
+          status: 504, // Gateway Timeout
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+    }
+    
     // Network error or JSON parsing error
     return new Response(
       JSON.stringify({
