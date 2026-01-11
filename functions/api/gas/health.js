@@ -55,7 +55,7 @@ export async function onRequestGet({ request, env }) {
     const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
     
     try {
-      var gasResponse = await fetch(gasUrl.toString(), {
+      const gasResponse = await fetch(gasUrl.toString(), {
         method: 'GET',
         signal: controller.signal,
       });
@@ -63,38 +63,39 @@ export async function onRequestGet({ request, env }) {
       clearTimeout(timeoutId);
     }
 
-    // Check if GAS returned a successful response
-    if (!gasResponse.ok) {
+    // Parse the GAS response
+    // Note: GAS always returns HTTP 200, so we check the JSON body for errors
+    const gasData = await gasResponse.json();
+    
+    // Validate response structure
+    if (typeof gasData !== 'object' || gasData === null) {
+      throw new Error('Invalid response format from upstream service');
+    }
+
+    // Check if the response indicates an error
+    if (gasData.ok === false) {
       // Check if it's an authentication error
-      const contentType = gasResponse.headers.get('content-type');
-      if (contentType && contentType.includes('application/json')) {
-        try {
-          const errorData = await gasResponse.json();
-          if (errorData.error === 'Unauthorized') {
-            return new Response(
-              JSON.stringify({
-                ok: false,
-                error: 'Authentication failed with upstream service',
-              }),
-              {
-                status: 502, // Bad Gateway
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-              }
-            );
+      if (gasData.error === 'Unauthorized') {
+        return new Response(
+          JSON.stringify({
+            ok: false,
+            error: 'Authentication failed with upstream service',
+          }),
+          {
+            status: 502, // Bad Gateway
+            headers: {
+              'Content-Type': 'application/json',
+            },
           }
-        } catch (e) {
-          // Failed to parse error response, fall through to generic error
-        }
+        );
       }
       
-      // GAS returned an error status (generic)
+      // Other error from GAS
       return new Response(
         JSON.stringify({
           ok: false,
           error: 'Upstream service returned an error',
-          statusCode: gasResponse.status,
+          message: gasData.error || 'Unknown error',
         }),
         {
           status: 502, // Bad Gateway
@@ -105,15 +106,7 @@ export async function onRequestGet({ request, env }) {
       );
     }
 
-    // Parse and validate the GAS response
-    const gasData = await gasResponse.json();
-    
-    // Validate response structure
-    if (typeof gasData !== 'object' || gasData === null) {
-      throw new Error('Invalid response format from upstream service');
-    }
-
-    // Forward the response as-is
+    // Forward the successful response as-is
     return new Response(
       JSON.stringify(gasData),
       {

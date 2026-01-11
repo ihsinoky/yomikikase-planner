@@ -145,7 +145,7 @@ curl https://yomikikase-planner.pages.dev/api/gas/health
 ```json
 {
   "ok": true,
-  "timestamp": "2025-12-29T12:00:00.000Z",
+  "timestamp": "2020-01-01T00:00:00.000Z",
   "message": "yomikikase-planner GAS Web App is running"
 }
 ```
@@ -215,7 +215,7 @@ curl "https://script.google.com/macros/s/DEPLOYMENT_ID/exec?action=health&apiKey
 ```json
 {
   "ok": true,
-  "timestamp": "2025-12-29T12:00:00.000Z",
+  "timestamp": "YYYY-MM-DDTHH:MM:SS.SSSZ",
   "message": "yomikikase-planner GAS Web App is running"
 }
 ```
