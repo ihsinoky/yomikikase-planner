@@ -164,6 +164,8 @@ GET https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec
 
 **ヘルスチェック API**: システムの動作確認
 
+⚠️ **セキュリティ警告**: このエンドポイントには直接アクセスせず、Cloudflare Pages Functions 経由（`/api/gas/health`）でアクセスすることを強く推奨します。
+
 ```
 GET https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec?action=health&apiKey=YOUR_API_KEY
 ```
@@ -171,6 +173,8 @@ GET https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec?action=health&api
 **パラメータ**:
 - `action`: `health` (必須)
 - `apiKey`: API キー (スクリプトプロパティに設定されている場合は必須)
+
+**⚠️ 注意**: API キーを URL に含めると、ブラウザ履歴やサーバーログに記録される可能性があります。本番環境では Cloudflare Pages Functions のプロキシ経由でのアクセスを使用してください。
 
 **レスポンス例（成功時）**:
 ```json
@@ -189,10 +193,24 @@ GET https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec?action=health&api
 }
 ```
 
-**注意**: 
+**推奨されるアクセス方法**:
+
+フロントエンドから GAS にアクセスする場合は、必ず Cloudflare Pages Functions 経由でアクセスしてください：
+
+```javascript
+// ✅ 推奨: Cloudflare Pages Functions 経由
+const response = await fetch('/api/gas/health');
+const data = await response.json();
+```
+
+```bash
+# ✅ 推奨: コマンドラインからも Cloudflare 経由
+curl https://yomikikase-planner.pages.dev/api/gas/health
+```
+
+**補足**: 
 - スクリプトプロパティに `API_KEY` が設定されている場合、API キーの検証が行われます
 - API キーが未設定の場合は検証をスキップします（後方互換性のため）
-- Cloudflare Pages Functions 経由でアクセスすることを推奨します（`/api/gas/health`）
 
 ### POST /exec?action=saveResponse
 

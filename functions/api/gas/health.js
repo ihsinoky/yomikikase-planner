@@ -57,7 +57,31 @@ export async function onRequestGet({ request, env }) {
 
     // Check if GAS returned a successful response
     if (!gasResponse.ok) {
-      // GAS returned an error status
+      // Check if it's an authentication error
+      const contentType = gasResponse.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        try {
+          const errorData = await gasResponse.json();
+          if (errorData.error === 'Unauthorized') {
+            return new Response(
+              JSON.stringify({
+                ok: false,
+                error: 'Authentication failed with upstream service',
+              }),
+              {
+                status: 502, // Bad Gateway
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+              }
+            );
+          }
+        } catch (e) {
+          // Failed to parse error response, fall through to generic error
+        }
+      }
+      
+      // GAS returned an error status (generic)
       return new Response(
         JSON.stringify({
           ok: false,

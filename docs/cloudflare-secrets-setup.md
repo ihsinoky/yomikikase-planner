@@ -185,11 +185,13 @@ GAS 側の API キーと Cloudflare 側の API キーが一致しない場合：
 
 ### 4.3. GAS 直叩きの動作確認
 
+⚠️ **セキュリティ警告**: 以下の例は設定確認のためのものです。実運用では GAS に直接アクセスせず、必ず Cloudflare Pages Functions 経由（`/api/gas/health`）でアクセスしてください。また、API キーは URL に含めるとブラウザ履歴やログに残るため、本番環境では注意が必要です。
+
 GAS に直接アクセスした場合、API キーなしではエラーが返ることを確認：
 
 ```bash
 # API キーなし（エラーになるべき）
-curl "https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec?action=health"
+curl "https://script.google.com/macros/s/DEPLOYMENT_ID/exec?action=health"
 ```
 
 **期待されるレスポンス**:
@@ -204,7 +206,8 @@ curl "https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec?action=health"
 **API キーあり（成功するべき）**:
 
 ```bash
-curl "https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec?action=health&apiKey=your-api-key"
+# 注意: API キーを URL に含めるため、実運用では推奨されません
+curl "https://script.google.com/macros/s/DEPLOYMENT_ID/exec?action=health&apiKey=YOUR_API_KEY"
 ```
 
 **期待されるレスポンス**:
@@ -216,6 +219,8 @@ curl "https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec?action=health&a
   "message": "yomikikase-planner GAS Web App is running"
 }
 ```
+
+⚠️ **重要**: 上記の直接アクセスは設定確認のみに使用し、実運用では必ず Cloudflare Pages Functions のプロキシ（`/api/gas/health`）経由でアクセスしてください。
 
 ---
 
