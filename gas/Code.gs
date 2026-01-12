@@ -27,7 +27,7 @@ function getApiKey() {
 function validateApiKey(e) {
   var apiKey = getApiKey();
   
-  // API キーが未設定の場合は拒否（セキュリティ強化：API_KEY 必須化）
+  // API キーが未設定の場合は拒否（セキュリティ強化：API_KEY 必須化 - 直接アクセス防止とJSONP廃止のため）
   if (!apiKey) {
     Logger.log('ERROR: API_KEY is not configured in Script Properties');
     return false;
@@ -124,7 +124,9 @@ function doGet(e) {
     }
     
     // 将来の API エンドポイント用の認証（health は既に処理済み）
-    // HTML 配信（action なし）は認証不要だが、新しい action が追加される場合は認証必須とする
+    // セキュアデフォルト：HTML 配信（action なし）は認証不要だが、
+    // 新しい action が追加される場合は自動的に認証必須とする
+    // これにより、新エンドポイント追加時に認証を忘れるリスクを防ぐ
     // 例: action=getSurveys, action=saveResponse などの将来実装
     if (action && action !== 'health') {
       if (!validateApiKey(e)) {

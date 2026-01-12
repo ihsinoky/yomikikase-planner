@@ -11,9 +11,9 @@
 openssl rand -base64 32
 ```
 
-出力例: `YOUR_GENERATED_API_KEY_HERE_REPLACE_WITH_ACTUAL_VALUE`
+出力例: `[REPLACE-WITH-ACTUAL-GENERATED-KEY]`
 
-**⚠️ 重要**: 実際の検証では、上記コマンドで生成された実際の値を使用してください。このドキュメントの例示値は使用しないでください。
+**⚠️ 重要**: 実際の検証では、上記コマンドで生成された実際の値を使用してください。このドキュメントのプレースホルダーは使用しないでください。
 
 ### 2. GAS にデプロイ
 
@@ -26,7 +26,7 @@ openssl rand -base64 32
 
 ```
 GAS_BASE_URL=https://script.google.com/macros/s/{DEPLOYMENT_ID}/exec
-GAS_API_KEY={YOUR_GENERATED_API_KEY}
+GAS_API_KEY=[REPLACE-WITH-ACTUAL-GENERATED-KEY]
 ```
 
 ## 検証項目
@@ -81,8 +81,8 @@ curl -X GET "https://script.google.com/macros/s/{DEPLOYMENT_ID}/exec?action=heal
 
 **手順**:
 ```bash
-# {YOUR_GENERATED_API_KEY} を実際に生成した API キーに置き換えてください
-curl -X GET "https://script.google.com/macros/s/{DEPLOYMENT_ID}/exec?action=health&apiKey={YOUR_GENERATED_API_KEY}"
+# [REPLACE-WITH-ACTUAL-GENERATED-KEY] を実際に生成した API キーに置き換えてください
+curl -X GET "https://script.google.com/macros/s/{DEPLOYMENT_ID}/exec?action=health&apiKey=[REPLACE-WITH-ACTUAL-GENERATED-KEY]"
 ```
 
 **期待される結果**:
@@ -104,8 +104,8 @@ curl -X GET "https://script.google.com/macros/s/{DEPLOYMENT_ID}/exec?action=heal
 
 **手順**:
 ```bash
-# {YOUR_GENERATED_API_KEY} を実際に生成した API キーに置き換えてください
-curl -X GET "https://script.google.com/macros/s/{DEPLOYMENT_ID}/exec?action=health&apiKey={YOUR_GENERATED_API_KEY}&callback=myCallback"
+# [REPLACE-WITH-ACTUAL-GENERATED-KEY] を実際に生成した API キーに置き換えてください
+curl -X GET "https://script.google.com/macros/s/{DEPLOYMENT_ID}/exec?action=health&apiKey=[REPLACE-WITH-ACTUAL-GENERATED-KEY]&callback=myCallback"
 ```
 
 **期待される結果**:
@@ -264,6 +264,6 @@ function debugApiKey() {
 
 ## 変更履歴
 
-| 日付 | 変更内容 | 担当 |
-|------|---------|------|
-| 2025-01-12 | 初版作成 | @copilot |
+| 日付 | 変更内容 |
+|------|---------|
+| 2025-01-12 | 初版作成 |
