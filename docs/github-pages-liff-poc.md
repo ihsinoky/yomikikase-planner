@@ -1,6 +1,36 @@
 # GitHub Pages で静的 LIFF を配信する PoC 手順書
 
+## ⚠️ **重要：この PoC は完了しました（運用非推奨）**
+
+**2025年1月12日 - GitHub Pages 経路は停止されました**
+
+- ❌ **この環境は運用に使用しないでください**
+- ❌ **LINE Developers Console の Endpoint URL に設定しないでください**
+- ✅ **本番運用は Cloudflare Pages を使用してください** → [Cloudflare Pages セットアップ手順](cloudflare-pages-setup.md)
+- 📚 **この PoC は参考資料として保存されています**
+
+### 停止理由
+
+1. **セキュリティリスク**: GitHub Pages は Secrets 管理ができず、API キーが露出するリスクがある
+2. **JSONP 廃止**: JSONP は XSS 攻撃のリスクがあり、2025年1月12日に完全廃止
+3. **アーキテクチャ移行**: Cloudflare Pages + Functions による統合運用に移行
+4. **保守性**: 環境変数管理、レート制限、CORS 対応が困難
+
+### 推奨環境（本番運用）
+
+| 項目 | GitHub Pages（廃止） | Cloudflare Pages（推奨） |
+|-----|---------------------|------------------------|
+| 配信 | GitHub Pages | Cloudflare Pages |
+| API 経路 | GAS 直接 + JSONP | `/api/*` (Functions) |
+| API キー | 非対応 | 必須（環境変数管理） |
+| セキュリティ | 低 | 高 |
+| 推奨度 | ❌ 廃止 | ✅ 推奨 |
+
+---
+
 このドキュメントでは、GitHub Pages を使って静的 LIFF アプリケーションを配信し、LINE ミニアプリとして動作確認するまでの手順を説明します。
+
+**📝 注意**: 以下の手順は PoC 完了時点の記録です。本番運用には使用しないでください。
 
 ## 目次
 
@@ -10,16 +40,17 @@
 - [2. LINE Developers Console の設定](#2-line-developers-console-の設定)
 - [3. 動作確認](#3-動作確認)
 - [4. トラブルシューティング](#4-トラブルシューティング)
+- [ロールバック手順](#ロールバック手順)
 
 ---
 
 ## 概要
 
-### このPoCで達成すること
+### このPoCで達成すること（完了）
 
-- GitHub Pages 上の静的ページを LIFF の Endpoint URL として設定
-- LINEアプリ内で起動して `liff.init()` → `liff.getProfile()` まで到達することを確認
-- 画面上に init 成功・profile 表示・デバッグログ表示
+- ✅ GitHub Pages 上の静的ページを LIFF の Endpoint URL として設定
+- ✅ LINEアプリ内で起動して `liff.init()` → `liff.getProfile()` まで到達することを確認
+- ✅ 画面上に init 成功・profile 表示・デバッグログ表示
 
 ### スコープ外（このPoCではやらないこと）
 
@@ -315,7 +346,45 @@ LINE ミニアプリには3つの内部チャネルがあります:
 
 ---
 
-## 次のステップ
+## ロールバック手順
+
+**⚠️ 緊急時のみ使用してください**
+
+Cloudflare Pages から GitHub Pages に戻す必要がある場合（非推奨）:
+
+### 1. LINE Developers Console で Endpoint URL を戻す
+
+1. [LINE Developers Console](https://developers.line.biz/console/) にアクセス
+2. LINE ミニアプリのチャネルを選択
+3. **Developing タブ** → **Basic settings** → **Edit** をクリック
+4. **Endpoint URL** を変更:
+   - 変更前: `https://your-project.pages.dev/`
+   - 変更後: `https://ihsinoky.github.io/yomikikase-planner/miniapp-poc/`
+5. **Save** をクリック
+
+### 2. GAS の API キー要件を一時的に緩和（非推奨）
+
+⚠️ セキュリティリスクがあるため、緊急時のみ実施してください。
+
+1. Apps Script エディタで `Code.gs` を開く
+2. `validateApiKey()` 関数のチェックを一時的にコメントアウト
+3. 新しいバージョンをデプロイ
+
+### 3. 確認
+
+- LINE アプリから `https://miniapp.line.me/{LIFF_ID}` にアクセス
+- 画面が正常に表示されることを確認
+- `liff.init()` と `liff.getProfile()` が動作することを確認
+
+### ⚠️ ロールバック後の注意事項
+
+- API キー認証が無効になるため、セキュリティリスクが高まります
+- できるだけ早く Cloudflare Pages に戻すことを推奨します
+- ロールバック期間中は、不審なアクセスがないか監視してください
+
+---
+
+## 次のステップ（PoC 完了時点）
 
 PoC が成功したら、以下のような拡張が可能です:
 
@@ -326,8 +395,9 @@ PoC が成功したら、以下のような拡張が可能です:
    - 書き込み機能を作って mini app から操作できるようにする
 
 3. **本番環境への移行**
-   - Review チャネルで審査申請
-   - Published チャネルで一般公開
+   - ❌ ~~Review チャネルで審査申請~~（GitHub Pages は非推奨）
+   - ❌ ~~Published チャネルで一般公開~~（GitHub Pages は非推奨）
+   - ✅ **Cloudflare Pages への移行** → [セットアップ手順](cloudflare-pages-setup.md)
 
 ---
 
@@ -336,3 +406,5 @@ PoC が成功したら、以下のような拡張が可能です:
 - [LINE Developers ドキュメント](https://developers.line.biz/ja/docs/)
 - [LIFF ドキュメント](https://developers.line.biz/ja/docs/liff/)
 - [GitHub Pages ドキュメント](https://docs.github.com/ja/pages)
+- [Cloudflare Pages セットアップ手順](cloudflare-pages-setup.md) ← **推奨**
+- [GitHub Pages + JSONP 廃止について](github-pages-jsonp-deprecation.md)

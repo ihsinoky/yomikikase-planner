@@ -1,12 +1,36 @@
 # LIFF PoC - GitHub Pages Static Hosting
 
+## ⚠️ **重要：この PoC は完了しました（運用非推奨）**
+
+**2025年1月12日 - GitHub Pages 経路は停止されました**
+
+- ❌ **この環境は運用に使用しないでください**
+- ❌ **LINE Developers Console の Endpoint URL に設定しないでください**
+- ✅ **本番運用は Cloudflare Pages を使用してください** → [`liff/`](../../liff/) ディレクトリ
+- 📚 **この PoC は参考資料として保存されています**
+
+### 停止理由
+
+1. **セキュリティリスク**: GitHub Pages は Secrets 管理ができず、API キーが露出するリスクがある
+2. **JSONP 廃止**: JSONP は XSS 攻撃のリスクがあり、2025年1月12日に完全廃止
+3. **アーキテクチャ移行**: Cloudflare Pages + Functions による統合運用に移行
+
+### 推奨環境（本番運用）
+
+- **配信**: Cloudflare Pages ([`liff/`](../../liff/))
+- **API**: Cloudflare Pages Functions (`/api/gas/*`)
+- **認証**: API キー必須
+- **詳細**: [Cloudflare Pages セットアップ手順](../cloudflare-pages-setup.md)
+
+---
+
 このディレクトリには、GitHub Pages で配信される静的 LIFF アプリケーションの PoC（概念実証）が含まれています。
 
 ## 📄 ファイル
 
 - `index.html` - 静的 LIFF アプリケーション（最小構成）
 
-## 🎯 目的
+## 🎯 目的（PoC 完了時点）
 
 GitHub Pages を使って静的 LIFF アプリケーションを配信し、以下を確認する:
 
