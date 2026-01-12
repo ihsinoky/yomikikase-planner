@@ -27,9 +27,10 @@ function getApiKey() {
 function validateApiKey(e) {
   var apiKey = getApiKey();
   
-  // API キーが未設定の場合は検証をスキップ（後方互換性のため）
+  // API キーが未設定の場合は拒否（セキュリティ強化：API_KEY 必須化）
   if (!apiKey) {
-    return true;
+    Logger.log('ERROR: API_KEY is not configured in Script Properties');
+    return false;
   }
   
   // クエリパラメータから apiKey を取得
@@ -87,6 +88,17 @@ function doGet(e) {
   try {
     var action = e.parameter.action;
     
+    // JSONP callback パラメータを検出して拒否
+    // GitHub Pages + JSONP 経路の廃止により、callback パラメータは受け付けない
+    if (e.parameter.callback) {
+      return ContentService
+        .createTextOutput(JSON.stringify({
+          ok: false,
+          error: 'JSONP is not supported. Please use JSON API via Cloudflare Functions.'
+        }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    
     // 簡易ルーティング
     if (action === 'health') {
       // API キーの検証
@@ -103,7 +115,20 @@ function doGet(e) {
       return handleHealthCheck();
     }
     
-    // デフォルト: LIFF HTML を返す
+    // デフォルト: API キーの検証（将来の API エンドポイント用）
+    // HTML 配信は認証不要だが、それ以外の action が追加される場合は認証必須とする
+    if (action && action !== 'health') {
+      if (!validateApiKey(e)) {
+        return ContentService
+          .createTextOutput(JSON.stringify({
+            ok: false,
+            error: 'Unauthorized'
+          }))
+          .setMimeType(ContentService.MimeType.JSON);
+      }
+    }
+    
+    // デフォルト: LIFF HTML を返す（認証不要）
     return handleServeHtml();
     
   } catch (error) {
