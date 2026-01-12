@@ -69,12 +69,22 @@ Cloudflare Pages Functions を使用して、GAS Web App への通信を集約�
 
 詳細と移行手順は **[GitHub Pages + JSONP 廃止ドキュメント](docs/github-pages-jsonp-deprecation.md)** を参照してください。
 
+#### 🎉 Cloudflare Pages への移行完了（2025-01-12）
+
+LINE ミニアプリの配信元を Cloudflare Pages に統一しました：
+
+- ✅ **本番運用**: Cloudflare Pages (`liff/`) - Endpoint URL を Cloudflare に設定
+- ✅ **API 経路**: `/api/gas/*` (Cloudflare Functions) 経由で GAS にアクセス
+- ✅ **セキュリティ**: API キー必須、JSONP 廃止、GAS 直接アクセス禁止
+- 📊 **移行完了レポート**: **[Cloudflare 移行完了レポート](docs/cloudflare-migration-completion.md)**
+- 📋 **検証チェックリスト**: **[移行検証チェックリスト](docs/cloudflare-migration-verification-checklist.md)**
+
 #### 📚 参考：GitHub Pages 静的 LIFF PoC（過去の成果物）
 
 GitHub Pages で静的 LIFF を配信する PoC（概念実証）として作成されました：
 
-- **[GitHub Pages LIFF PoC 手順書](docs/github-pages-liff-poc.md)** - GitHub Pages セットアップと LINE 連携の完全ガイド
-- **[miniapp-poc ディレクトリ](docs/miniapp-poc/)** - 静的 LIFF アプリケーションの PoC 実装
+- **[GitHub Pages LIFF PoC 手順書](docs/github-pages-liff-poc.md)** - GitHub Pages セットアップと LINE 連携の完全ガイド（運用非推奨）
+- **[miniapp-poc ディレクトリ](docs/miniapp-poc/)** - 静的 LIFF アプリケーションの PoC 実装（運用非推奨）
 - **位置づけ**: 過去の PoC として参考用に保存。**JSONP 廃止により使用不可**。今後の開発は `liff/` (Cloudflare Pages) で行う
 
 ### 旧実装（Next.js/Prisma）の参照先
