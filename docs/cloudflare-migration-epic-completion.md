@@ -134,6 +134,8 @@ if (!validateApiKey(e)) {
 
 ## EPIC DoD（完了条件）の確認
 
+**DoD 検証レポート**: [EPIC DoD 検証レポート](EPIC-dod-verification-report.md)
+
 ### ✅ 1. LINE ミニアプリが Cloudflare Pages の URL を配信面として使用している
 
 **確認内容**:
