@@ -90,7 +90,7 @@ PCのブラウザで確認する場合:
 
 - [ ] ブラウザで以下の URL にアクセス:
   ```
-  https://<project>.pages.dev/?liffId={LIFF_ID}
+  https://{your-project-name}.pages.dev/?liffId={LIFF_ID}
   ```
 - [ ] 開発者ツールを開く（F12 または 右クリック → 検証）
 - [ ] **Network** タブを開く
@@ -146,7 +146,7 @@ curl "https://script.google.com/macros/s/.../exec?action=health&apiKey=...&callb
 ### 4.3. Cloudflare Functions 経由でのアクセス（成功することを確認）
 
 ```bash
-curl "https://<project>.pages.dev/api/gas/health"
+curl "https://{your-project-name}.pages.dev/api/gas/health"
 ```
 
 - [ ] レスポンスが以下の形式であることを確認:
@@ -192,7 +192,7 @@ curl "https://<project>.pages.dev/api/gas/health"
 
 - [ ] Endpoint URL が GitHub Pages の URL で **ない** ことを確認
   - ❌ `https://ihsinoky.github.io/yomikikase-planner/miniapp-poc/`
-  - ✅ `https://<project>.pages.dev/`
+  - ✅ `https://{your-project-name}.pages.dev/`
 
 ---
 

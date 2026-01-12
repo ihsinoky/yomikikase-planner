@@ -14,7 +14,7 @@ LINE ミニアプリの配信元を GitHub Pages から Cloudflare Pages に移�
 
 | 項目 | 変更前 | 変更後 |
 |-----|--------|--------|
-| Endpoint URL | `https://ihsinoky.github.io/yomikikase-planner/miniapp-poc/` | `https://<project>.pages.dev/` |
+| Endpoint URL | `https://ihsinoky.github.io/yomikikase-planner/miniapp-poc/` | `https://{your-project-name}.pages.dev/` |
 | 配信元 | GitHub Pages | Cloudflare Pages |
 | API 経路 | GAS 直接 + JSONP | `/api/gas/*` (Functions) |
 
@@ -24,7 +24,7 @@ LINE ミニアプリの配信元を GitHub Pages から Cloudflare Pages に移�
 2. LINE ミニアプリのチャネルを選択
 3. **Developing タブ** → **Basic settings** → **Edit**
 4. **Endpoint URL** を Cloudflare Pages の URL に変更
-   - 例: `https://<project>.pages.dev/`
+   - 例: `https://{your-project-name}.pages.dev/`
 5. **Save** をクリック
 
 ### 2. 動作確認
@@ -94,7 +94,7 @@ curl "https://script.google.com/macros/s/.../exec?action=health&apiKey=...&callb
 # 期待される出力: {"ok":false,"error":"JSONP is not supported..."}
 
 # Cloudflare Functions 経由でアクセス（成功）
-curl "https://<project>.pages.dev/api/gas/health"
+curl "https://{your-project-name}.pages.dev/api/gas/health"
 # 期待される出力: {"ok":true,"timestamp":"...","message":"..."}
 ```
 
