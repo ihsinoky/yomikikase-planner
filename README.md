@@ -76,6 +76,7 @@ LINE ミニアプリの配信元を Cloudflare Pages に統一しました：
 - ✅ **本番運用**: Cloudflare Pages (`liff/`) - Endpoint URL を Cloudflare に設定
 - ✅ **API 経路**: `/api/gas/*` (Cloudflare Functions) 経由で GAS にアクセス
 - ✅ **セキュリティ**: API キー必須、JSONP 廃止、GAS 直接アクセス禁止
+- 🏆 **EPIC 完了レポート**: **[Cloudflare Pages 移行 EPIC 完了レポート](docs/cloudflare-migration-epic-completion.md)**
 - 📊 **移行完了レポート**: **[Cloudflare 移行完了レポート](docs/cloudflare-migration-completion.md)**
 - 📋 **検証チェックリスト**: **[移行検証チェックリスト](docs/cloudflare-migration-verification-checklist.md)**
 
