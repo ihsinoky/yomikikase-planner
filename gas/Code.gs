@@ -115,8 +115,9 @@ function doGet(e) {
       return handleHealthCheck();
     }
     
-    // デフォルト: API キーの検証（将来の API エンドポイント用）
-    // HTML 配信は認証不要だが、それ以外の action が追加される場合は認証必須とする
+    // 将来の API エンドポイント用の認証（health は既に処理済み）
+    // HTML 配信（action なし）は認証不要だが、新しい action が追加される場合は認証必須とする
+    // 例: action=getSurveys, action=saveResponse などの将来実装
     if (action && action !== 'health') {
       if (!validateApiKey(e)) {
         return ContentService

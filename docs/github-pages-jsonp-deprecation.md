@@ -60,7 +60,7 @@ Google Spreadsheet
 1. Apps Script エディタで「プロジェクトの設定」を開く
 2. 「スクリプト プロパティ」に以下を追加:
    - プロパティ: API_KEY
-   - 値: openssl rand -base64 32 で生成した文字列
+   - 値: `openssl rand -base64 32` で生成した文字列
 ```
 
 ### 2. Cloudflare Pages の設定
