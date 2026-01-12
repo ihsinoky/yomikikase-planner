@@ -181,9 +181,12 @@ openssl rand -base64 32
 - [Cloudflare Secrets 設定手順](cloudflare-secrets-setup.md)
 - [GAS Proxy 実装サマリー](gas-proxy-summary.md)
 - [Cloudflare Pages セットアップ](cloudflare-pages-setup.md)
+- [Cloudflare 移行完了レポート](cloudflare-migration-completion.md) ← **移行完了の詳細**
+- [移行検証チェックリスト](cloudflare-migration-verification-checklist.md)
 
 ## 変更履歴
 
 | 日付 | 変更内容 |
 |------|---------|
 | 2025-01-12 | GitHub Pages + JSONP 経路の廃止、API キー必須化 |
+| 2025-01-12 | Cloudflare Pages への移行完了 |
