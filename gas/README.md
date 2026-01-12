@@ -211,7 +211,7 @@ GET https://your-domain.pages.dev/api/gas/health
 **パラメータ**:
 - `action`: `health` (必須)
 - `apiKey`: API キー (必須 - スクリプトプロパティに設定)
-- `callback`: **廃止されました** - JSONP は使用できません
+- `callback`: **廃止されました** - 指定した場合は明示的にエラーを返します（無視されるのではなく、リクエストが拒否されます）
 
 **⚠️ API キーの必須化について**:
 - API キーが設定されていない場合、すべての API リクエストは拒否されます

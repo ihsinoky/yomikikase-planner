@@ -105,13 +105,13 @@ function createJsonError(errorMessage) {
  */
 function doGet(e) {
   try {
-    var action = e.parameter.action;
-    
-    // JSONP callback パラメータを検出して拒否
+    // JSONP callback パラメータを最初にチェック（不要な処理を避けるため）
     // GitHub Pages + JSONP 経路の廃止により、callback パラメータは受け付けない
     if (e.parameter.callback) {
       return createJsonError('JSONP is not supported. Please use JSON API via Cloudflare Functions.');
     }
+    
+    var action = e.parameter.action;
     
     // 簡易ルーティング
     if (action === 'health') {
