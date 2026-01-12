@@ -381,7 +381,7 @@ Google Spreadsheet
 
 ## 関連リンク
 
-- **EPIC Issue**: [#XX] Cloudflare Pages + Pages Functions へ移行（静的LIFF + API Gateway）
+- **EPIC Issue**: [#44] Cloudflare Pages + Pages Functions へ移行（静的LIFF + API Gateway）
 - **メインREADME**: [README.md](../README.md)
 - **GAS README**: [gas/README.md](../gas/README.md)
 - **LIFF README**: [liff/README.md](../liff/README.md)
