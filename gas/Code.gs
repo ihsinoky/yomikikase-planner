@@ -75,6 +75,25 @@ function getLogsSheet() {
 }
 
 // ========================================
+// HTTP Response Helpers
+// ========================================
+
+/**
+ * JSON エラーレスポンスを生成
+ * 
+ * @param {string} errorMessage - エラーメッセージ
+ * @returns {ContentService} JSON エラーレスポンス
+ */
+function createJsonError(errorMessage) {
+  return ContentService
+    .createTextOutput(JSON.stringify({
+      ok: false,
+      error: errorMessage
+    }))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+// ========================================
 // HTTP Handlers
 // ========================================
 
@@ -91,26 +110,15 @@ function doGet(e) {
     // JSONP callback パラメータを検出して拒否
     // GitHub Pages + JSONP 経路の廃止により、callback パラメータは受け付けない
     if (e.parameter.callback) {
-      return ContentService
-        .createTextOutput(JSON.stringify({
-          ok: false,
-          error: 'JSONP is not supported. Please use JSON API via Cloudflare Functions.'
-        }))
-        .setMimeType(ContentService.MimeType.JSON);
+      return createJsonError('JSONP is not supported. Please use JSON API via Cloudflare Functions.');
     }
     
     // 簡易ルーティング
     if (action === 'health') {
       // API キーの検証
       if (!validateApiKey(e)) {
-        var output = ContentService
-          .createTextOutput(JSON.stringify({
-            ok: false,
-            error: 'Unauthorized'
-          }))
-          .setMimeType(ContentService.MimeType.JSON);
         // GAS では HTTPステータスコードを設定できないため、エラーメッセージで対応
-        return output;
+        return createJsonError('Unauthorized');
       }
       return handleHealthCheck();
     }
@@ -120,12 +128,7 @@ function doGet(e) {
     // 例: action=getSurveys, action=saveResponse などの将来実装
     if (action && action !== 'health') {
       if (!validateApiKey(e)) {
-        return ContentService
-          .createTextOutput(JSON.stringify({
-            ok: false,
-            error: 'Unauthorized'
-          }))
-          .setMimeType(ContentService.MimeType.JSON);
+        return createJsonError('Unauthorized');
       }
     }
     
@@ -138,12 +141,7 @@ function doGet(e) {
       stack: error.stack
     });
     
-    return ContentService
-      .createTextOutput(JSON.stringify({
-        ok: false,
-        error: 'Internal server error'
-      }))
-      .setMimeType(ContentService.MimeType.JSON);
+    return createJsonError('Internal server error');
   }
 }
 
@@ -164,20 +162,10 @@ function doPost(e) {
     // 簡易ルーティング（将来の拡張用）
     if (action === 'saveResponse') {
       // Sprint 2 以降で実装予定
-      return ContentService
-        .createTextOutput(JSON.stringify({
-          ok: false,
-          error: 'Not implemented yet'
-        }))
-        .setMimeType(ContentService.MimeType.JSON);
+      return createJsonError('Not implemented yet');
     }
     
-    return ContentService
-      .createTextOutput(JSON.stringify({
-        ok: false,
-        error: 'Unknown action'
-      }))
-      .setMimeType(ContentService.MimeType.JSON);
+    return createJsonError('Unknown action');
       
   } catch (error) {
     logToSheet('ERROR', 'doPost', 'リクエスト処理中にエラーが発生しました', {
@@ -185,12 +173,7 @@ function doPost(e) {
       stack: error.stack
     });
     
-    return ContentService
-      .createTextOutput(JSON.stringify({
-        ok: false,
-        error: 'Internal server error'
-      }))
-      .setMimeType(ContentService.MimeType.JSON);
+    return createJsonError('Internal server error');
   }
 }
 
