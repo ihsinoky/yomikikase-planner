@@ -17,7 +17,7 @@
 - [ ] LINE ミニアプリのチャネル（Developing）を選択
 - [ ] Basic settings で Endpoint URL を確認:
   - 変更前: `https://ihsinoky.github.io/yomikikase-planner/miniapp-poc/`
-  - 変更後: `https://<project>.pages.dev/`
+  - 変更後: `https://{your-project-name}.pages.dev/`
 - [ ] Endpoint URL を Cloudflare Pages の URL に変更
 - [ ] 末尾の `/`（スラッシュ）が含まれていることを確認
 - [ ] 「Save」をクリック
