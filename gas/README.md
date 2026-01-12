@@ -2,6 +2,35 @@
 
 このディレクトリには、yomikikase-planner の Google Apps Script (GAS) Web App のコードが含まれています。
 
+## ⚠️ 重要：GAS への直接アクセスは禁止
+
+**セキュリティ上の重要なお知らせ：**
+
+- 🚫 **GAS Web App URL に直接アクセスしないでください**
+- ✅ **必ず Cloudflare Pages Functions 経由でアクセスしてください**（`/api/gas/*`）
+- 🔒 **API キーは必須です** - スクリプトプロパティに `API_KEY` を設定する必要があります
+- ❌ **JSONP は廃止されました** - `callback` パラメータは受け付けません
+
+### なぜ直接アクセスを禁止するのか？
+
+1. **セキュリティリスク**: API キーが URL に露出する可能性
+2. **濫用リスク**: 公開 URL への直接アクセスでレート制限なしの攻撃を受ける可能性
+3. **保守性**: GAS URL が変更されても、プロキシ経由なら影響を受けない
+4. **CORS 問題**: 直接アクセスでは CORS エラーが発生する可能性
+
+### 正しいアクセス方法
+
+```javascript
+// ✅ 正しい: Cloudflare Pages Functions 経由
+const response = await fetch('/api/gas/health');
+const data = await response.json();
+```
+
+```javascript
+// ❌ 間違い: GAS に直接アクセス
+const response = await fetch('https://script.google.com/macros/s/.../exec?action=health&apiKey=...');
+```
+
 ## ファイル構成
 
 - `Code.gs` - サーバーサイドロジック（GAS スクリプト）
@@ -152,9 +181,13 @@ Spreadsheet の Logs タブを開き、以下が記録されていることを�
 
 ## API エンドポイント
 
+### ⚠️ 重要：すべてのエンドポイントは Cloudflare 経由でアクセスしてください
+
+**直接アクセスは禁止されています。** 以下のエンドポイント説明は、デプロイ確認時の参考情報です。
+
 ### GET /exec
 
-**デフォルト動作**: LIFF HTML を返す
+**デフォルト動作**: LIFF HTML を返す（認証不要）
 
 ```
 GET https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec
@@ -162,19 +195,28 @@ GET https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec
 
 ### GET /exec?action=health
 
-**ヘルスチェック API**: システムの動作確認
+**ヘルスチェック API**: システムの動作確認（API キー必須）
 
-⚠️ **セキュリティ警告**: このエンドポイントには直接アクセスせず、Cloudflare Pages Functions 経由（`/api/gas/health`）でアクセスすることを強く推奨します。
+🚫 **このエンドポイントに直接アクセスしないでください。**  
+✅ **Cloudflare Pages Functions 経由でアクセスしてください:** `/api/gas/health`
 
 ```
+# ❌ 直接アクセス禁止
 GET https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec?action=health&apiKey=YOUR_API_KEY
+
+# ✅ 正しいアクセス方法
+GET https://your-domain.pages.dev/api/gas/health
 ```
 
 **パラメータ**:
 - `action`: `health` (必須)
-- `apiKey`: API キー (スクリプトプロパティに設定されている場合は必須)
+- `apiKey`: API キー (必須 - スクリプトプロパティに設定)
+- `callback`: **廃止されました** - 指定した場合は明示的にエラーを返します（無視されるのではなく、リクエストが拒否されます）
 
-**⚠️ 注意**: API キーを URL に含めると、ブラウザ履歴やサーバーログに記録される可能性があります。本番環境では Cloudflare Pages Functions のプロキシ経由でのアクセスを使用してください。
+**⚠️ API キーの必須化について**:
+- API キーが設定されていない場合、すべての API リクエストは拒否されます
+- API キーが不正な場合も拒否されます
+- GAS の制約により HTTP ステータスコードは設定できませんが、JSON レスポンスの `ok: false` で判定できます
 
 **レスポンス例（成功時）**:
 ```json
@@ -185,11 +227,19 @@ GET https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec?action=health&api
 }
 ```
 
-**レスポンス例（API キーが不正な場合）**:
+**レスポンス例（API キーが未設定・不正な場合）**:
 ```json
 {
   "ok": false,
   "error": "Unauthorized"
+}
+```
+
+**レスポンス例（JSONP callback パラメータが指定された場合）**:
+```json
+{
+  "ok": false,
+  "error": "JSONP is not supported. Please use JSON API via Cloudflare Functions."
 }
 ```
 
@@ -208,9 +258,10 @@ const data = await response.json();
 curl https://yomikikase-planner.pages.dev/api/gas/health
 ```
 
-**補足**: 
-- スクリプトプロパティに `API_KEY` が設定されている場合、API キーの検証が行われます
-- API キーが未設定の場合は検証をスキップします（後方互換性のため）
+**⚠️ 重要な変更 (2025-01-12)**: 
+- **API キーは必須になりました** - スクリプトプロパティに `API_KEY` を設定する必要があります
+- API キーが未設定の場合、すべての API リクエストは `Unauthorized` エラーを返します
+- この変更により、GitHub Pages + JSONP 経路の使用が完全に停止されます
 
 ### POST /exec?action=saveResponse
 
@@ -260,10 +311,32 @@ Logs シートのデータをクリアします（ヘッダー行は保持）。
 - Sprint 1 では LIFF ID が未設定のため、LIFF 初期化はスキップされます
 - Sprint 2 で LIFF ID を設定し、初期化コードを実装予定
 
+### "Unauthorized" エラーが返される
+
+**原因**: API キーが未設定、または不正
+
+**対処法**:
+1. スクリプトプロパティに `API_KEY` が設定されているか確認
+2. Cloudflare Pages の環境変数 `GAS_API_KEY` と一致しているか確認
+3. API キーに余分な空白や改行が含まれていないか確認
+4. 詳細は [API キーの設定](#api-キーの設定) セクションを参照
+
+### "JSONP is not supported" エラーが返される
+
+**原因**: `callback` パラメータが URL に含まれている
+
+**対処法**:
+1. JSONP は廃止されました
+2. 代わりに Cloudflare Pages Functions 経由で JSON API を使用してください
+3. フロントエンドコードから `callback` パラメータを削除してください
+
 ## セキュリティ考慮事項
 
-### 現在の実装
+### 現在の実装（2025-01-12 更新）
 
+- ✅ **API キー認証必須化** - すべての API エンドポイントで API キー検証
+- ✅ **JSONP 廃止** - callback パラメータを拒否
+- ✅ **直接アクセス禁止** - Cloudflare Functions 経由のみ推奨
 - ✅ LockService による同時書き込み対策
 - ✅ エラーハンドリングとログ記録
 - ✅ try/catch による例外処理
@@ -275,15 +348,16 @@ Logs シートのデータをクリアします（ヘッダー行は保持）。
 - ⏳ ユーザー認証・認可
 - ⏳ レート制限
 
-### API キーの設定
+### API キーの設定（必須）
 
-GAS への直接アクセスを制限するため、API キーを設定できます：
+🔒 **重要**: API キーの設定は必須です。設定されていない場合、すべての API リクエストは拒否されます。
 
 1. Apps Script エディタで「プロジェクトの設定」（歯車アイコン）を開く
 2. 「スクリプト プロパティ」セクションで「スクリプト プロパティを追加」をクリック
 3. 以下を入力：
    - **プロパティ**: `API_KEY`
    - **値**: 安全なランダム文字列（32文字以上推奨）
+     - 例: `openssl rand -base64 32` で生成
 4. 保存
 
 詳細は [Cloudflare Secrets 設定手順](../docs/cloudflare-secrets-setup.md) を参照してください。

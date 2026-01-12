@@ -54,8 +54,9 @@ export async function onRequestGet({ request, env }) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
     
+    let gasResponse = null;
     try {
-      const gasResponse = await fetch(gasUrl.toString(), {
+      gasResponse = await fetch(gasUrl.toString(), {
         method: 'GET',
         signal: controller.signal,
       });

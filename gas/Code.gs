@@ -27,9 +27,10 @@ function getApiKey() {
 function validateApiKey(e) {
   var apiKey = getApiKey();
   
-  // API キーが未設定の場合は検証をスキップ（後方互換性のため）
+  // API キーが未設定の場合は拒否（セキュリティ強化：API_KEY 必須化 - 直接アクセス防止とJSONP廃止のため）
   if (!apiKey) {
-    return true;
+    Logger.log('ERROR: API_KEY is not configured in Script Properties');
+    return false;
   }
   
   // クエリパラメータから apiKey を取得
@@ -74,6 +75,25 @@ function getLogsSheet() {
 }
 
 // ========================================
+// HTTP Response Helpers
+// ========================================
+
+/**
+ * JSON エラーレスポンスを生成
+ * 
+ * @param {string} errorMessage - エラーメッセージ
+ * @returns {ContentService} JSON エラーレスポンス
+ */
+function createJsonError(errorMessage) {
+  return ContentService
+    .createTextOutput(JSON.stringify({
+      ok: false,
+      error: errorMessage
+    }))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+// ========================================
 // HTTP Handlers
 // ========================================
 
@@ -85,25 +105,36 @@ function getLogsSheet() {
  */
 function doGet(e) {
   try {
+    // JSONP callback パラメータを最初にチェック（不要な処理を避けるため）
+    // GitHub Pages + JSONP 経路の廃止により、callback パラメータは受け付けない
+    if (e.parameter.callback) {
+      return createJsonError('JSONP is not supported. Please use JSON API via Cloudflare Functions.');
+    }
+    
     var action = e.parameter.action;
     
     // 簡易ルーティング
     if (action === 'health') {
       // API キーの検証
       if (!validateApiKey(e)) {
-        var output = ContentService
-          .createTextOutput(JSON.stringify({
-            ok: false,
-            error: 'Unauthorized'
-          }))
-          .setMimeType(ContentService.MimeType.JSON);
         // GAS では HTTPステータスコードを設定できないため、エラーメッセージで対応
-        return output;
+        return createJsonError('Unauthorized');
       }
       return handleHealthCheck();
     }
     
-    // デフォルト: LIFF HTML を返す
+    // 将来の API エンドポイント用の認証（health は既に処理済み）
+    // セキュアデフォルト：HTML 配信（action なし）は認証不要だが、
+    // 新しい action が追加される場合は自動的に認証必須とする
+    // これにより、新エンドポイント追加時に認証を忘れるリスクを防ぐ
+    // 例: action=getSurveys, action=saveResponse などの将来実装
+    if (action && action !== 'health') {
+      if (!validateApiKey(e)) {
+        return createJsonError('Unauthorized');
+      }
+    }
+    
+    // デフォルト: LIFF HTML を返す（認証不要）
     return handleServeHtml();
     
   } catch (error) {
@@ -112,12 +143,7 @@ function doGet(e) {
       stack: error.stack
     });
     
-    return ContentService
-      .createTextOutput(JSON.stringify({
-        ok: false,
-        error: 'Internal server error'
-      }))
-      .setMimeType(ContentService.MimeType.JSON);
+    return createJsonError('Internal server error');
   }
 }
 
@@ -138,20 +164,10 @@ function doPost(e) {
     // 簡易ルーティング（将来の拡張用）
     if (action === 'saveResponse') {
       // Sprint 2 以降で実装予定
-      return ContentService
-        .createTextOutput(JSON.stringify({
-          ok: false,
-          error: 'Not implemented yet'
-        }))
-        .setMimeType(ContentService.MimeType.JSON);
+      return createJsonError('Not implemented yet');
     }
     
-    return ContentService
-      .createTextOutput(JSON.stringify({
-        ok: false,
-        error: 'Unknown action'
-      }))
-      .setMimeType(ContentService.MimeType.JSON);
+    return createJsonError('Unknown action');
       
   } catch (error) {
     logToSheet('ERROR', 'doPost', 'リクエスト処理中にエラーが発生しました', {
@@ -159,12 +175,7 @@ function doPost(e) {
       stack: error.stack
     });
     
-    return ContentService
-      .createTextOutput(JSON.stringify({
-        ok: false,
-        error: 'Internal server error'
-      }))
-      .setMimeType(ContentService.MimeType.JSON);
+    return createJsonError('Internal server error');
   }
 }
 
