@@ -13,7 +13,7 @@ LINE ミニアプリの配信元を **GitHub Pages + GAS(JSONP)** から **Cloud
 
 - ✅ **セキュリティ強化**: API キー必須化、JSONP 廃止、GAS 直接アクセス禁止
 - ✅ **運用の簡素化**: 同一オリジン API、Secrets 管理の一元化
-- ✅ **アーキテクチャの統一**: 静的配信とAPIプロキシを Cloudflare に集約
+- ✅ **アーキテクチャの統一**: 静的配信と API プロキシを Cloudflare に集約
 - ✅ **旧経路の停止**: GitHub Pages + JSONP 経路を完全に非推奨化
 
 ---
