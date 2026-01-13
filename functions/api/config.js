@@ -1,15 +1,34 @@
 /**
- * Cloudflare Pages Functions - Health Check Endpoint
+ * Cloudflare Pages Functions - Configuration Endpoint
  * 
- * This endpoint is used to verify that the Pages Functions are working correctly.
- * It returns a simple JSON response with status 200.
+ * This endpoint provides LIFF and application configuration to the frontend.
+ * It returns settings needed by the LIFF application such as:
+ * - LIFF ID
+ * - API base URL
+ * - Environment name
  * 
  * @param {Object} context - Cloudflare Pages Functions context
  * @param {Request} context.request - The incoming request
- * @returns {Response} JSON response with { "ok": true }
+ * @param {Object} context.env - Environment variables
+ * @returns {Response} JSON response with configuration
  */
-export async function onRequestGet({ request }) {
-  // CORS headers - allow any origin for health check endpoint
+export async function onRequestGet({ request, env }) {
+  // Get configuration from environment variables
+  const liffId = env.LIFF_ID || null;
+  const environmentName = env.ENVIRONMENT_NAME || 'production';
+  
+  // API base URL is the current origin
+  const url = new URL(request.url);
+  const apiBaseUrl = `${url.protocol}//${url.host}/api`;
+  
+  // Build configuration object
+  const config = {
+    liffId: liffId,
+    apiBaseUrl: apiBaseUrl,
+    environment: environmentName,
+  };
+  
+  // CORS headers - allow any origin for config endpoint (read-only, non-sensitive data)
   const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, OPTIONS',
@@ -27,7 +46,7 @@ export async function onRequestGet({ request }) {
   };
   
   return new Response(
-    JSON.stringify({ ok: true }),
+    JSON.stringify(config),
     {
       status: 200,
       headers: {
