@@ -285,4 +285,4 @@ Sprint 1 の完了により、「Google Spreadsheet + Google Apps Script + 静�
 
 | 日付 | 変更内容 | 担当 |
 |------|---------|------|
-| 2025-01-13 | ADR 初版作成 | @copilot |
+| 2026-01-13 | ADR 初版作成 | @copilot |

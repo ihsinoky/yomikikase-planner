@@ -15,7 +15,7 @@ ADR は、プロジェクトの重要な技術的・アーキテクチャ的決�
 
 | 番号 | タイトル | ステータス | 日付 |
 |-----|---------|-----------|------|
-| [ADR-001](001-adopt-cloudflare-pages-functions.md) | Cloudflare Pages + Functions を採用し、GitHub Pages + JSONP を廃止する | 採用済み | 2025-01-12 |
+| [ADR-001](001-adopt-cloudflare-pages-functions.md) | Cloudflare Pages + Functions を採用し、GitHub Pages + JSONP を廃止する | 採用済み | 2026-01-13 |
 
 ## ADR の読み方
 
