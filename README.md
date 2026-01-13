@@ -76,6 +76,7 @@ LINE ミニアプリの配信元を Cloudflare Pages に統一しました：
 - ✅ **本番運用**: Cloudflare Pages (`liff/`) - Endpoint URL を Cloudflare に設定
 - ✅ **API 経路**: `/api/gas/*` (Cloudflare Functions) 経由で GAS にアクセス
 - ✅ **セキュリティ**: API キー必須、JSONP 廃止、GAS 直接アクセス禁止
+- 📐 **アーキテクチャ決定**: **[ADR-001: Cloudflare Pages + Functions 採用の決定](docs/adr/001-adopt-cloudflare-pages-functions.md)**
 - 🏆 **EPIC 完了レポート**: **[Cloudflare Pages 移行 EPIC 完了レポート](docs/cloudflare-migration-epic-completion.md)**
 - 📊 **移行完了レポート**: **[Cloudflare 移行完了レポート](docs/cloudflare-migration-completion.md)**
 - 📋 **検証チェックリスト**: **[移行検証チェックリスト](docs/cloudflare-migration-verification-checklist.md)**
@@ -87,6 +88,19 @@ GitHub Pages で静的 LIFF を配信する PoC（概念実証）として作成
 - **[GitHub Pages LIFF PoC 手順書](docs/github-pages-liff-poc.md)** - GitHub Pages セットアップと LINE 連携の完全ガイド（運用非推奨）
 - **[miniapp-poc ディレクトリ](docs/miniapp-poc/)** - 静的 LIFF アプリケーションの PoC 実装（運用非推奨）
 - **位置づけ**: 過去の PoC として参考用に保存。**JSONP 廃止により使用不可**。今後の開発は `liff/` (Cloudflare Pages) で行う
+
+### 📐 アーキテクチャ決定記録（ADR）
+
+重要なアーキテクチャの決定は、ADR（Architecture Decision Records）として文書化されています：
+
+- **[ADR ディレクトリ](docs/adr/)** - すべての ADR の一覧
+- **[ADR-001: Cloudflare Pages + Functions 採用](docs/adr/001-adopt-cloudflare-pages-functions.md)** - 現在のアーキテクチャの根拠
+
+**ADR の役割**:
+- 「どこに何が置かれるか」を 1 図で説明
+- 「なぜこの構成を選んだのか」の理由を明確化
+- ロールバック手順を含む実用的なガイド
+- 今スプリントで触らない範囲を明示
 
 ### 旧実装（Next.js/Prisma）の参照先
 
