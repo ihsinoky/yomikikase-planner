@@ -81,7 +81,7 @@ GET /api/config
 - `environment`: 環境名（環境変数 `ENVIRONMENT_NAME` から取得、デフォルトは `production`）
 
 **環境変数**:
-- `LIFF_ID`: LINE LIFF アプリケーションの ID（必須）
+- `LIFF_ID`: LINE LIFF アプリケーションの ID（オプション、未設定時は `null`）
 - `ENVIRONMENT_NAME`: 環境名（オプション、デフォルト: `production`）
 
 **ヘッダー**:

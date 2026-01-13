@@ -104,7 +104,7 @@ if (config.environment === 'development') {
 
 | 変数名 | 説明 | 必須 | 例 |
 |--------|------|------|-----|
-| `LIFF_ID` | LINE LIFF アプリケーションの ID | ✅ 必須 | `1234567890-abcdefgh` |
+| `LIFF_ID` | LINE LIFF アプリケーションの ID | オプション（未設定時は `null`） | `1234567890-abcdefgh` |
 | `ENVIRONMENT_NAME` | 環境名 | オプション | `production` |
 
 ### ローカル開発での設定方法
