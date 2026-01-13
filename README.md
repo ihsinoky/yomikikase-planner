@@ -48,6 +48,7 @@ GAS Web App の実装とデプロイ手順：
 - **[liff/index.html](liff/index.html)** - LIFF アプリケーションの本体（`liff.init()` → `liff.getProfile()` 機能を実装）
 - **[Cloudflare Pages セットアップ手順](docs/cloudflare-pages-setup.md)** - デプロイ手順
 - **[Cloudflare Secrets 設定手順](docs/cloudflare-secrets-setup.md)** - GAS プロキシ API のための環境変数設定
+- **[LIFF デプロイ・動作確認チェックリスト](docs/liff-deployment-verification.md)** - 本番運用前の総合的な確認手順
 - **実装方針**: フロントエンドは GAS URL を直接参照せず、同一オリジンの `/api/*` のみを呼び出す
 
 #### 🔌 Cloudflare Pages Functions（API プロキシ）
