@@ -253,7 +253,7 @@ https://miniapp.line.me/{LIFF_ID}?liffId={LIFF_ID}
 - [ ] `[INFO] LIFF ID: 1234567890...`
 - [ ] `[SUCCESS] ✅ liff.init() が成功しました`
 - [ ] `[INFO] 📱 環境情報`
-  - [ ] `isInClient: true (LINEアプリ内)` または `false (外部ブラウザ)`
+  - [ ] `isInClient: true (LINE アプリ内)` または `false (外部ブラウザ)`
   - [ ] `isLoggedIn: true`
   - [ ] `OS: ios` または `android`
 - [ ] `[INFO] 👤 プロフィール取得`
