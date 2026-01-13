@@ -84,8 +84,8 @@ LIFF ID は環境変数ではなく、**URL パラメータ**で指定します�
 - LINE Developers Console で Endpoint URL を設定する際に LIFF ID を含める
 
 **設定方法**:
-```
-https://your-project-name.pages.dev/?liffId={LIFF_ID}
+```text
+https://yomikikase-planner.pages.dev/?liffId={LIFF_ID}
 ```
 
 ---
@@ -178,13 +178,13 @@ https://your-project-name.pages.dev/?liffId={LIFF_ID}
 まず、ブラウザで API が動作することを確認します。
 
 - [ ] ブラウザで以下の URL にアクセス:
-  ```
-  https://your-project-name.pages.dev/api/health
+  ```text
+  https://yomikikase-planner.pages.dev/api/health
   ```
 - [ ] レスポンスが `{"ok":true}` であることを確認
 - [ ] GAS プロキシ API を確認:
-  ```
-  https://your-project-name.pages.dev/api/gas/health
+  ```text
+  https://yomikikase-planner.pages.dev/api/gas/health
   ```
 - [ ] レスポンスが以下の形式であることを確認:
   ```json
@@ -200,8 +200,8 @@ https://your-project-name.pages.dev/?liffId={LIFF_ID}
 ブラウザで LIFF が読み込まれることを確認します。
 
 - [ ] ブラウザで以下の URL にアクセス:
-  ```
-  https://your-project-name.pages.dev/?liffId={LIFF_ID}
+  ```text
+  https://yomikikase-planner.pages.dev/?liffId={LIFF_ID}
   ```
   - `{LIFF_ID}` を実際の LIFF ID に置き換え
 - [ ] 開発者ツール（F12）で Console タブを開く
@@ -222,7 +222,7 @@ LINE アプリから LIFF を起動し、プロフィール取得まで動作す
 #### 5.3.1. LIFF URL の作成
 
 LINE アプリで開く URL を作成します:
-```
+```text
 https://miniapp.line.me/{LIFF_ID}?liffId={LIFF_ID}
 ```
 
@@ -280,8 +280,8 @@ https://miniapp.line.me/{LIFF_ID}?liffId={LIFF_ID}
 PC ブラウザで開発者ツールを使用して詳細を確認します。
 
 - [ ] PC ブラウザで LIFF URL を開く:
-  ```
-  https://your-project-name.pages.dev/?liffId={LIFF_ID}
+  ```text
+  https://yomikikase-planner.pages.dev/?liffId={LIFF_ID}
   ```
 - [ ] 開発者ツール（F12）を開く
 - [ ] **Network** タブを開く
@@ -320,7 +320,7 @@ PC ブラウザで開発者ツールを使用して詳細を確認します。
 
 **解決方法**:
 - URL に `?liffId={LIFF_ID}` を追加
-- 正しい形式: `https://your-project-name.pages.dev/?liffId=1234567890-abcdefgh`
+- 正しい形式: `https://yomikikase-planner.pages.dev/?liffId=1234567890-abcdefgh`
 
 ### 7.2. Endpoint URL 不一致エラー
 
@@ -335,7 +335,7 @@ liff.init() was called with a current URL that is not related to the endpoint UR
 1. LINE Developers Console で Endpoint URL を確認
 2. Endpoint URL を現在の Cloudflare Pages の URL に変更
 3. 末尾のスラッシュ `/` を忘れずに付ける
-4. 例: `https://your-project-name.pages.dev/`
+4. 例: `https://yomikikase-planner.pages.dev/`
 
 ### 7.3. 「Unauthorized」エラー
 
@@ -377,7 +377,7 @@ liff.init() was called with a current URL that is not related to the endpoint UR
 ### 8.1. Cloudflare Pages の URL で LIFF が表示される
 
 - [ ] Cloudflare Pages にデプロイされている
-- [ ] ブラウザで `https://your-project-name.pages.dev/?liffId={LIFF_ID}` にアクセスできる
+- [ ] ブラウザで `https://yomikikase-planner.pages.dev/?liffId={LIFF_ID}` にアクセスできる
 - [ ] LIFF アプリの画面が表示される
 
 ### 8.2. LINE ミニアプリ内で liff.init → プロフィール取得まで通る
