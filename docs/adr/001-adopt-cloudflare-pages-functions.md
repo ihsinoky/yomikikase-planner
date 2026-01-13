@@ -277,7 +277,7 @@ Sprint 1 の完了により、「Google Spreadsheet + Google Apps Script + 静�
 - **提案者**: @copilot
 - **レビュー**: 完了
 - **承認日**: 2025年1月12日（実装完了）
-- **ADR 文書化日**: 2025年1月13日
+- **ADR 文書化日**: 2026年1月13日
 
 ---
 
