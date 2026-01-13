@@ -8,47 +8,16 @@
  * @param {Request} context.request - The incoming request
  * @returns {Response} JSON response with { "ok": true }
  */
-export async function onRequestGet({ request }) {
-  // CORS headers - allow any origin for health check endpoint
-  const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
-    'Access-Control-Max-Age': '86400', // 24 hours
-  };
-  
-  // Security headers
-  const securityHeaders = {
-    'Content-Type': 'application/json',
-    'X-Content-Type-Options': 'nosniff',
-    'X-Frame-Options': 'DENY',
-    'Content-Security-Policy': "default-src 'none'",
-    'Referrer-Policy': 'no-referrer',
-  };
-  
-  return new Response(
-    JSON.stringify({ ok: true }),
-    {
-      status: 200,
-      headers: {
-        ...corsHeaders,
-        ...securityHeaders,
-      },
-    }
-  );
+
+import { jsonResponse, corsPreflightResponse } from '../_shared/headers.js';
+
+export async function onRequestGet() {
+  return jsonResponse({ ok: true });
 }
 
 /**
  * Handle OPTIONS request for CORS preflight
  */
-export async function onRequestOptions({ request }) {
-  return new Response(null, {
-    status: 204,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
-      'Access-Control-Max-Age': '86400', // 24 hours
-    },
-  });
+export async function onRequestOptions() {
+  return corsPreflightResponse();
 }

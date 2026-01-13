@@ -12,6 +12,9 @@
  * @param {Object} context.env - Environment variables
  * @returns {Response} JSON response with configuration
  */
+
+import { jsonResponse, corsPreflightResponse } from '../_shared/headers.js';
+
 export async function onRequestGet({ request, env }) {
   // Get configuration from environment variables
   const liffId = env.LIFF_ID || null;
@@ -23,51 +26,17 @@ export async function onRequestGet({ request, env }) {
   
   // Build configuration object
   const config = {
-    liffId: liffId,
-    apiBaseUrl: apiBaseUrl,
+    liffId,
+    apiBaseUrl,
     environment: environmentName,
   };
   
-  // CORS headers - allow any origin for config endpoint (read-only, non-sensitive data)
-  const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
-    'Access-Control-Max-Age': '86400', // 24 hours
-  };
-  
-  // Security headers
-  const securityHeaders = {
-    'Content-Type': 'application/json',
-    'X-Content-Type-Options': 'nosniff',
-    'X-Frame-Options': 'DENY',
-    'Content-Security-Policy': "default-src 'none'",
-    'Referrer-Policy': 'no-referrer',
-  };
-  
-  return new Response(
-    JSON.stringify(config),
-    {
-      status: 200,
-      headers: {
-        ...corsHeaders,
-        ...securityHeaders,
-      },
-    }
-  );
+  return jsonResponse(config);
 }
 
 /**
  * Handle OPTIONS request for CORS preflight
  */
-export async function onRequestOptions({ request }) {
-  return new Response(null, {
-    status: 204,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
-      'Access-Control-Max-Age': '86400', // 24 hours
-    },
-  });
+export async function onRequestOptions() {
+  return corsPreflightResponse();
 }
