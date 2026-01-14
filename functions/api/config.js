@@ -16,6 +16,12 @@
 import { jsonResponse, corsPreflightResponse } from '../_shared/headers.js';
 
 export async function onRequestGet({ request, env }) {
+  const requestUrl = new URL(request.url);
+  console.log('[Cloudflare] Config request received:', {
+    path: requestUrl.pathname,
+    timestamp: new Date().toISOString(),
+  });
+
   // Get configuration from environment variables
   const liffId = env.LIFF_ID || null;
   const environmentName = env.ENVIRONMENT_NAME || 'production';
@@ -30,6 +36,16 @@ export async function onRequestGet({ request, env }) {
     apiBaseUrl,
     environment: environmentName,
   };
+  
+  // Log warning if LIFF_ID is not configured
+  if (!liffId) {
+    console.warn('[Cloudflare] LIFF_ID is not configured');
+  }
+  
+  console.log('[Cloudflare] Config response:', {
+    hasLiffId: !!liffId,
+    environment: environmentName,
+  });
   
   return jsonResponse(config);
 }

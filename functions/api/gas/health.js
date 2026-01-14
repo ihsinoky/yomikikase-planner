@@ -13,11 +13,18 @@
 import { jsonResponse, corsPreflightResponse } from '../../_shared/headers.js';
 
 export async function onRequestGet({ request, env }) {
+  const requestUrl = new URL(request.url);
+  console.log('[Cloudflare] Health check request received:', {
+    path: requestUrl.pathname,
+    timestamp: new Date().toISOString(),
+  });
+
   // Validate required environment variables
   const gasBaseUrl = env.GAS_BASE_URL;
   const gasApiKey = env.GAS_API_KEY;
 
   if (!gasBaseUrl) {
+    console.error('[Cloudflare] GAS_BASE_URL is not configured');
     return jsonResponse(
       {
         ok: false,
@@ -28,6 +35,7 @@ export async function onRequestGet({ request, env }) {
   }
 
   if (!gasApiKey) {
+    console.error('[Cloudflare] GAS_API_KEY is not configured');
     return jsonResponse(
       {
         ok: false,
@@ -43,6 +51,11 @@ export async function onRequestGet({ request, env }) {
     gasUrl.searchParams.set('action', 'health');
     gasUrl.searchParams.set('apiKey', gasApiKey);
 
+    console.log('[Cloudflare] Sending request to GAS:', {
+      url: gasBaseUrl,
+      action: 'health',
+    });
+
     // Make request to GAS with timeout
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
@@ -56,6 +69,11 @@ export async function onRequestGet({ request, env }) {
     } finally {
       clearTimeout(timeoutId);
     }
+
+    console.log('[Cloudflare] GAS response received:', {
+      status: gasResponse.status,
+      ok: gasResponse.ok,
+    });
 
     // Hybrid error handling: Check both HTTP status and JSON body
     // This supports both current GAS (always HTTP 200) and future implementations
@@ -114,6 +132,7 @@ export async function onRequestGet({ request, env }) {
     if (gasData.ok === false) {
       // Check if it's an authentication error
       if (gasData.error === 'Unauthorized') {
+        console.error('[Cloudflare] Authentication failed with GAS');
         return jsonResponse(
           {
             ok: false,
@@ -124,6 +143,7 @@ export async function onRequestGet({ request, env }) {
       }
       
       // Other error from GAS
+      console.error('[Cloudflare] GAS returned error:', gasData.error);
       return jsonResponse(
         {
           ok: false,
@@ -135,10 +155,12 @@ export async function onRequestGet({ request, env }) {
     }
 
     // Forward the successful response as-is
+    console.log('[Cloudflare] Health check succeeded');
     return jsonResponse(gasData, 200);
   } catch (error) {
     // Handle timeout errors specifically
     if (error.name === 'AbortError') {
+      console.error('[Cloudflare] GAS request timeout after 10s');
       return jsonResponse(
         {
           ok: false,
@@ -150,6 +172,10 @@ export async function onRequestGet({ request, env }) {
     }
     
     // Network error or JSON parsing error
+    console.error('[Cloudflare] Failed to communicate with GAS:', {
+      error: error.message,
+      name: error.name,
+    });
     return jsonResponse(
       {
         ok: false,
