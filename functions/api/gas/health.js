@@ -9,38 +9,31 @@
  * @param {Object} context.env - Environment variables (GAS_BASE_URL, GAS_API_KEY)
  * @returns {Response} JSON response from GAS or error response
  */
+
+import { jsonResponse, corsPreflightResponse } from '../../_shared/headers.js';
+
 export async function onRequestGet({ request, env }) {
   // Validate required environment variables
   const gasBaseUrl = env.GAS_BASE_URL;
   const gasApiKey = env.GAS_API_KEY;
 
   if (!gasBaseUrl) {
-    return new Response(
-      JSON.stringify({
+    return jsonResponse(
+      {
         ok: false,
         error: 'GAS_BASE_URL is not configured',
-      }),
-      {
-        status: 500,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }
+      },
+      500
     );
   }
 
   if (!gasApiKey) {
-    return new Response(
-      JSON.stringify({
+    return jsonResponse(
+      {
         ok: false,
         error: 'GAS_API_KEY is not configured',
-      }),
-      {
-        status: 500,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }
+      },
+      500
     );
   }
 
@@ -75,33 +68,23 @@ export async function onRequestGet({ request, env }) {
         try {
           const errorData = await gasResponse.json();
           if (errorData.error === 'Unauthorized') {
-            return new Response(
-              JSON.stringify({
+            return jsonResponse(
+              {
                 ok: false,
                 error: 'Authentication failed with upstream service',
-              }),
-              {
-                status: 502, // Bad Gateway
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-              }
+              },
+              502 // Bad Gateway
             );
           }
           // Return other errors with parsed message
-          return new Response(
-            JSON.stringify({
+          return jsonResponse(
+            {
               ok: false,
               error: 'Upstream service returned an error',
               message: errorData.error || errorData.message || 'Unknown error',
               statusCode: gasResponse.status,
-            }),
-            {
-              status: 502, // Bad Gateway
-              headers: {
-                'Content-Type': 'application/json',
-              },
-            }
+            },
+            502 // Bad Gateway
           );
         } catch (e) {
           // Failed to parse error response, fall through to generic error
@@ -109,18 +92,13 @@ export async function onRequestGet({ request, env }) {
       }
       
       // Generic HTTP error without parseable JSON
-      return new Response(
-        JSON.stringify({
+      return jsonResponse(
+        {
           ok: false,
           error: 'Upstream service returned an error',
           statusCode: gasResponse.status,
-        }),
-        {
-          status: 502, // Bad Gateway
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        }
+        },
+        502 // Bad Gateway
       );
     }
 
@@ -136,77 +114,56 @@ export async function onRequestGet({ request, env }) {
     if (gasData.ok === false) {
       // Check if it's an authentication error
       if (gasData.error === 'Unauthorized') {
-        return new Response(
-          JSON.stringify({
+        return jsonResponse(
+          {
             ok: false,
             error: 'Authentication failed with upstream service',
-          }),
-          {
-            status: 502, // Bad Gateway
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          }
+          },
+          502 // Bad Gateway
         );
       }
       
       // Other error from GAS
-      return new Response(
-        JSON.stringify({
+      return jsonResponse(
+        {
           ok: false,
           error: 'Upstream service returned an error',
           message: gasData.error || 'Unknown error',
-        }),
-        {
-          status: 502, // Bad Gateway
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        }
+        },
+        502 // Bad Gateway
       );
     }
 
     // Forward the successful response as-is
-    return new Response(
-      JSON.stringify(gasData),
-      {
-        status: 200,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }
-    );
+    return jsonResponse(gasData, 200);
   } catch (error) {
     // Handle timeout errors specifically
     if (error.name === 'AbortError') {
-      return new Response(
-        JSON.stringify({
+      return jsonResponse(
+        {
           ok: false,
           error: 'Upstream service timeout',
           message: 'Request to GAS took too long',
-        }),
-        {
-          status: 504, // Gateway Timeout
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        }
+        },
+        504 // Gateway Timeout
       );
     }
     
     // Network error or JSON parsing error
-    return new Response(
-      JSON.stringify({
+    return jsonResponse(
+      {
         ok: false,
         error: 'Failed to communicate with upstream service',
         message: error.message,
-      }),
-      {
-        status: 502, // Bad Gateway
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }
+      },
+      502 // Bad Gateway
     );
   }
+}
+
+/**
+ * Handle OPTIONS request for CORS preflight
+ */
+export async function onRequestOptions() {
+  return corsPreflightResponse();
 }
