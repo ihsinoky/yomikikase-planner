@@ -10,7 +10,7 @@
  * @returns {Response} JSON response from GAS or error response
  */
 
-import { jsonResponse, corsPreflightResponse } from '../_shared/headers.js';
+import { jsonResponse, corsPreflightResponse } from '../../_shared/headers.js';
 
 export async function onRequestGet({ request, env }) {
   // Validate required environment variables
