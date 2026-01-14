@@ -8,6 +8,7 @@
 functions/
 └── api/
     ├── health.js      # ヘルスチェック API
+    ├── config.js      # 設定配信 API
     └── gas/
         └── health.js  # GAS Web App へのプロキシ（ヘルスチェック）
 ```
@@ -44,6 +45,51 @@ GET /api/health
 ```
 
 **HTTP ステータス**: 200
+
+**ヘッダー**:
+- `Access-Control-Allow-Origin: *` - CORS 対応
+- `X-Content-Type-Options: nosniff` - セキュリティヘッダー
+- `X-Frame-Options: DENY` - クリックジャッキング対策
+- `Content-Security-Policy: default-src 'none'` - XSS 対策
+- `Referrer-Policy: no-referrer` - リファラー情報の保護
+
+### `/api/config`
+
+LIFF アプリケーションに必要な設定情報を配信するエンドポイント。
+
+**ファイル**: `functions/api/config.js`
+
+**リクエスト**:
+```bash
+GET /api/config
+```
+
+**レスポンス**:
+```json
+{
+  "liffId": "1234567890-abcdefgh",
+  "apiBaseUrl": "https://yomikikase-planner.pages.dev/api",
+  "environment": "production"
+}
+```
+
+**HTTP ステータス**: 200
+
+**設定値の説明**:
+- `liffId`: LINE LIFF アプリケーションの ID（環境変数 `LIFF_ID` から取得、未設定時は `null`）
+- `apiBaseUrl`: API のベース URL（同一オリジンの `/api` パス）
+- `environment`: 環境名（環境変数 `ENVIRONMENT_NAME` から取得、デフォルトは `production`）
+
+**環境変数**:
+- `LIFF_ID`: LINE LIFF アプリケーションの ID（オプション、未設定時は `null`）
+- `ENVIRONMENT_NAME`: 環境名（オプション、デフォルト: `production`）
+
+**ヘッダー**:
+- `Access-Control-Allow-Origin: *` - CORS 対応
+- `X-Content-Type-Options: nosniff` - セキュリティヘッダー
+- `X-Frame-Options: DENY` - クリックジャッキング対策
+- `Content-Security-Policy: default-src 'none'` - XSS 対策
+- `Referrer-Policy: no-referrer` - リファラー情報の保護
 
 ### `/api/gas/health`
 

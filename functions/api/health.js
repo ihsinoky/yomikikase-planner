@@ -8,14 +8,16 @@
  * @param {Request} context.request - The incoming request
  * @returns {Response} JSON response with { "ok": true }
  */
-export async function onRequest({ request }) {
-  return new Response(
-    JSON.stringify({ ok: true }),
-    {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    }
-  );
+
+import { jsonResponse, corsPreflightResponse } from '../_shared/headers.js';
+
+export async function onRequestGet() {
+  return jsonResponse({ ok: true });
+}
+
+/**
+ * Handle OPTIONS request for CORS preflight
+ */
+export async function onRequestOptions() {
+  return corsPreflightResponse();
 }
