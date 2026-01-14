@@ -14,8 +14,9 @@
 
 **LIFF アプリケーション (`liff/index.html`)**:
 - 将来的に `/api/*` エンドポイントへの fetch 使用を前提とした設計
-- 現時点では LIFF の初期化とプロフィール取得のみを実装
+- 現時点では LIFF の初期化とプロフィール取得のみを実装（API 呼び出しなし）
 - JSONP 用の `<script>` タグ動的生成コードは存在しない（検証済み）
+- 注: 実際の API 呼び出しはまだ実装されていないが、設計上は fetch を使用する方針
 
 **GAS から配信される HTML (`gas/index.html`)**:
 - Line 277: `fetch(healthUrl)` で fetch API を使用
@@ -32,7 +33,7 @@ grep -r "callback.*parameter" --include="*.html" --include="*.js" liff/ gas/ fun
 # 結果: 実装コードにヒットなし（ドキュメントのみ）
 ```
 
-**判定**: ✅ 合格 - すべての API 呼び出しが fetch API を使用
+**判定**: ✅ 合格 - JSONP コードは存在せず、fetch を使用する設計になっている（実装は今後の拡張で行われる）
 
 ### ✅ 2. 主要ブラウザ（iOS Safari 想定）で CORS エラーが出ない
 
@@ -53,7 +54,7 @@ export const CORS_HEADERS = {
 **適用箇所**:
 - `functions/api/health.js`: CORS ヘッダー適用
 - `functions/api/config.js`: CORS ヘッダー適用
-- `functions/api/gas/health.js`: CORS ヘッダー適用（jsonResponse 経由）
+- `functions/api/gas/health.js`: CORS ヘッダー適用（このPRで修正）
 
 **OPTIONS リクエストのサポート**:
 - すべてのエンドポイントで `onRequestOptions` を実装
@@ -226,17 +227,18 @@ grep -r "script.src.*exec" --include="*.js" --include="*.html" \
 ### 2. fetch API の使用確認
 
 **liff/index.html**: 
-- 現時点では LIFF 初期化のみを実装
+- 現時点では LIFF 初期化のみを実装（API 呼び出しはまだ実装されていない）
 - 将来的に fetch を使用する設計（Line 380-381 でコメント記載）
 - JSONP は使用していない（検証済み）
 
 **gas/index.html**: 
 - Line 277 で fetch を使用してヘルスチェック API を呼び出し
-- 実装例として fetch の使用方法を示している
+- fetch の実装例として機能している
 
 **functions/api/gas/health.js**: 
-- Line 59 で fetch を使用して GAS にプロキシ
-- Cloudflare Functions から GAS への通信に fetch を使用
+- Line 52 で fetch を使用して GAS にプロキシ
+- このPRで jsonResponse ヘルパーを使用するように修正
+- CORS ヘッダーと OPTIONS サポートを追加
 
 ### 3. CORS ヘッダーの確認
 
