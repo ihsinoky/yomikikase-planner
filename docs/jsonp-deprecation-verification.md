@@ -13,9 +13,9 @@
 #### 検証内容
 
 **LIFF アプリケーション (`liff/index.html`)**:
-- Line 380-381: `/api/*` エンドポイントへの fetch 使用を明記
-- 実装では fetch API を使用することを前提としている
-- JSONP 用の `<script>` タグ動的生成コードは存在しない
+- 将来的に `/api/*` エンドポイントへの fetch 使用を前提とした設計
+- 現時点では LIFF の初期化とプロフィール取得のみを実装
+- JSONP 用の `<script>` タグ動的生成コードは存在しない（検証済み）
 
 **GAS から配信される HTML (`gas/index.html`)**:
 - Line 277: `fetch(healthUrl)` で fetch API を使用
@@ -225,9 +225,18 @@ grep -r "script.src.*exec" --include="*.js" --include="*.html" \
 
 ### 2. fetch API の使用確認
 
-**liff/index.html**: 存在しないが、将来的に fetch を使用する設計
-**gas/index.html**: Line 277 で fetch を使用
-**functions/api/gas/health.js**: Line 59 で fetch を使用
+**liff/index.html**: 
+- 現時点では LIFF 初期化のみを実装
+- 将来的に fetch を使用する設計（Line 380-381 でコメント記載）
+- JSONP は使用していない（検証済み）
+
+**gas/index.html**: 
+- Line 277 で fetch を使用してヘルスチェック API を呼び出し
+- 実装例として fetch の使用方法を示している
+
+**functions/api/gas/health.js**: 
+- Line 59 で fetch を使用して GAS にプロキシ
+- Cloudflare Functions から GAS への通信に fetch を使用
 
 ### 3. CORS ヘッダーの確認
 
@@ -344,6 +353,6 @@ JSONP は完全に廃止され、fetch + CORS による安全な API 呼び出�
 
 ---
 
-**検証者**: GitHub Copilot  
 **検証日**: 2026-01-14  
-**ステータス**: ✅ 合格
+**ステータス**: ✅ 合格  
+**備考**: この検証は自動化されたコードベース分析に基づいています。本番デプロイ前に人手による最終確認を推奨します。
