@@ -173,10 +173,11 @@ curl -I https://your-project-name.pages.dev/
 - [セットアップ手順書](../docs/setup.md)
 - [LIFF ドキュメント（LINE Developers）](https://developers.line.biz/ja/docs/liff/)
 
-## 📚 参考：GitHub Pages PoC
+## 🛑 参考：GitHub Pages PoC（停止）
 
 このアプリケーションは、`docs/miniapp-poc/` の GitHub Pages PoC を基に作成されました。
-PoC の成果物は参考用として保存されていますが、今後の開発はこの `liff/` ディレクトリで行います。
+PoC の成果物は参考用として保存されていますが、**GitHub Pages 経路は停止されました**（2025-01-12）。
+今後の開発はこの `liff/` ディレクトリ（Cloudflare Pages）で行います。
 
 ## 📊 次のステップ
 
