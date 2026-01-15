@@ -103,6 +103,23 @@ GitHub Pages で静的 LIFF を配信する PoC（概念実証）として作成
 - ロールバック手順を含む実用的なガイド
 - 今スプリントで触らない範囲を明示
 
+### 🔍 ログとトラブルシューティング
+
+システム障害時の問題切り分けとログ確認の手順：
+
+- **[ログ戦略とトラブルシューティング手順](docs/logging-strategy.md)** - 10分以内に問題を切り分ける手順
+- **[Cloudflare ログ確認手順](docs/cloudflare-logs-guide.md)** - Cloudflare Pages Functions のログ確認方法
+- **Spreadsheet Logs タブ** - GAS のリクエストログが記録される（永続的）
+
+**ログの記録場所**:
+- Cloudflare Functions → Cloudflare Dashboard で確認（24時間保存）
+- GAS → Spreadsheet の Logs タブ（永続保存）
+- LIFF → ブラウザコンソール（セッション中のみ）
+
+**個人情報保護**:
+- ログには LINE userId, displayName などの個人識別情報を記録しない
+- 記録するのはリクエスト種類、エラー内容、タイムスタンプのみ
+
 ### 旧実装（Next.js/Prisma）の参照先
 
 当初のNext.js/Prismaベースの実装は、以下のブランチ・タグで保存されています：
