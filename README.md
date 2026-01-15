@@ -2,6 +2,24 @@
 
 幼稚園の「絵本読み聞かせ」活動のための、LINEミニアプリ＋管理用Webアプリです。
 
+## 🚀 はじめ方（Cloudflare セットアップ）
+
+**最短で環境を構築する場合は、こちらから始めてください：**
+
+👉 **[Cloudflare 環境セットアップ - クイックスタート](docs/cloudflare-quickstart.md)** 👈
+
+- ✅ **所要時間**: 初回 30-40 分、再セットアップ 15-20 分
+- ✅ **対象**: Cloudflare Pages で本番運用する方（推奨）
+- ✅ **セキュア**: API キー認証、CORS 問題なし、GAS URL 隠蔽
+
+### その他のドキュメント
+
+- **[セットアップ手順書（詳細版）](docs/setup.md)** - Spreadsheet / GAS / LINE ミニアプリの完全ガイド
+- **[Cloudflare Pages セットアップ](docs/cloudflare-pages-setup.md)** - Cloudflare Pages の詳細設定
+- **[Cloudflare Secrets 設定](docs/cloudflare-secrets-setup.md)** - 環境変数の設定方法
+
+---
+
 ## ⚠️ 重要なお知らせ：アーキテクチャの軌道修正
 
 **2025年12月: Google Spreadsheet + Apps Script + 静的LIFF への方針転換**
@@ -60,15 +78,19 @@ Cloudflare Pages Functions を使用して、GAS Web App への通信を集約�
 - **セキュリティ**: API キーによる認証（必須、環境変数で管理、Git 管理外）
 - **メリット**: CORS 問題の回避、GAS URL の隠蔽、同一オリジン通信
 
-#### ⚠️ 重要なお知らせ：GitHub Pages + JSONP 経路の廃止（2025-01-12）
+#### 🛑 停止：GitHub Pages + JSONP 経路（2025-01-12）
+
+**⚠️ この経路は完全に停止されました - 使用禁止**
 
 セキュリティ強化のため、以下の経路を完全に廃止しました：
 
-- ❌ **GitHub Pages から GAS への直接アクセス禁止**
-- ❌ **JSONP (`callback` パラメータ) の廃止**
-- ❌ **API キーなしでの GAS アクセス禁止**
+- ❌ **GitHub Pages から GAS への直接アクセス - 禁止**
+- ❌ **JSONP (`callback` パラメータ) - 廃止**
+- ❌ **API キーなしでの GAS アクセス - 禁止**
 
-詳細と移行手順は **[GitHub Pages + JSONP 廃止ドキュメント](docs/github-pages-jsonp-deprecation.md)** を参照してください。
+**現在の推奨構成**: Cloudflare Pages + Cloudflare Functions → **[クイックスタート](docs/cloudflare-quickstart.md)**
+
+詳細と移行済みの記録は **[GitHub Pages + JSONP 廃止ドキュメント](docs/github-pages-jsonp-deprecation.md)** を参照してください。
 
 #### 🎉 Cloudflare Pages への移行完了（2025-01-12）
 
@@ -82,13 +104,21 @@ LINE ミニアプリの配信元を Cloudflare Pages に統一しました：
 - 📊 **移行完了レポート**: **[Cloudflare 移行完了レポート](docs/cloudflare-migration-completion.md)**
 - 📋 **検証チェックリスト**: **[移行検証チェックリスト](docs/cloudflare-migration-verification-checklist.md)**
 
-#### 📚 参考：GitHub Pages 静的 LIFF PoC（過去の成果物）
+#### 🛑 停止：GitHub Pages 静的 LIFF PoC（参考資料）
 
-GitHub Pages で静的 LIFF を配信する PoC（概念実証）として作成されました：
+**⚠️ この手順は停止されました（2025-01-12）- 使用しないでください**
 
-- **[GitHub Pages LIFF PoC 手順書](docs/github-pages-liff-poc.md)** - GitHub Pages セットアップと LINE 連携の完全ガイド（運用非推奨）
-- **[miniapp-poc ディレクトリ](docs/miniapp-poc/)** - 静的 LIFF アプリケーションの PoC 実装（運用非推奨）
-- **位置づけ**: 過去の PoC として参考用に保存。**JSONP 廃止により使用不可**。今後の開発は `liff/` (Cloudflare Pages) で行う
+GitHub Pages で静的 LIFF を配信する PoC は完了しましたが、セキュリティ上の理由により停止されました：
+
+- ❌ **[GitHub Pages LIFF PoC 手順書](docs/github-pages-liff-poc.md)** - **停止（運用不可）**
+- ❌ **[miniapp-poc ディレクトリ](docs/miniapp-poc/)** - **停止（運用不可）**
+
+**停止理由**:
+- JSONP 廃止によりセキュリティリスクあり
+- API キー管理ができない
+- 本番運用には Cloudflare Pages を使用してください → **[クイックスタート](docs/cloudflare-quickstart.md)**
+
+**位置づけ**: 過去の PoC として参考資料のみ。今後の開発は `liff/` (Cloudflare Pages) で行う
 
 ### 📐 アーキテクチャ決定記録（ADR）
 
