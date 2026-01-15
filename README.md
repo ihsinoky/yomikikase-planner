@@ -84,9 +84,9 @@ Cloudflare Pages Functions を使用して、GAS Web App への通信を集約�
 
 セキュリティ強化のため、以下の経路を完全に廃止しました：
 
-- ❌ **GitHub Pages から GAS への直接アクセス** → **禁止**
-- ❌ **JSONP (`callback` パラメータ)** → **廃止**
-- ❌ **API キーなしでの GAS アクセス** → **禁止**
+- ❌ **GitHub Pages から GAS への直接アクセス - 禁止**
+- ❌ **JSONP (`callback` パラメータ) - 廃止**
+- ❌ **API キーなしでの GAS アクセス - 禁止**
 
 **現在の推奨構成**: Cloudflare Pages + Cloudflare Functions → **[クイックスタート](docs/cloudflare-quickstart.md)**
 
