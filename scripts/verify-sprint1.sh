@@ -37,9 +37,22 @@ check_dir() {
 
 echo "📁 ディレクトリ構造チェック"
 echo "-----------------------------------"
+check_dir "functions"
 check_dir "gas"
+check_dir "liff"
 check_dir "sheet-template"
 check_dir "docs"
+echo ""
+
+echo "☁️ Cloudflare 実装ファイル"
+echo "-----------------------------------"
+check_file "functions/api/health.js"
+check_file "functions/api/config.js"
+check_file "functions/api/gas/health.js"
+check_file "functions/README.md"
+check_file "liff/index.html"
+check_file "liff/_routes.json"
+check_file "liff/README.md"
 echo ""
 
 echo "💾 GAS実装ファイル"
@@ -105,6 +118,34 @@ else
     FAIL=$((FAIL + 1))
 fi
 
+# Cloudflare Functions の主要エンドポイントチェック
+TOTAL=$((TOTAL + 1))
+if grep -q "onRequestGet" functions/api/health.js && \
+   grep -q "jsonResponse" functions/api/health.js && \
+   grep -q "LIFF_ID" functions/api/config.js && \
+   grep -q "apiBaseUrl" functions/api/config.js && \
+   grep -q "GAS_BASE_URL" functions/api/gas/health.js && \
+   grep -q "GAS_API_KEY" functions/api/gas/health.js; then
+    echo "✅ Cloudflare Functions に主要エンドポイント実装が存在"
+    PASS=$((PASS + 1))
+else
+    echo "❌ Cloudflare Functions に必要な実装が不足"
+    FAIL=$((FAIL + 1))
+fi
+
+# LIFF 静的アプリの主要実装チェック
+TOTAL=$((TOTAL + 1))
+if grep -q "static.line-scdn.net/liff/edge/2/sdk.js" liff/index.html && \
+   grep -q "liff.init" liff/index.html && \
+   grep -q "liff.getProfile" liff/index.html && \
+   grep -q '"include": \["/api/\*"\]' liff/_routes.json; then
+    echo "✅ LIFF 静的アプリと _routes.json が正しく配置されている"
+    PASS=$((PASS + 1))
+else
+    echo "❌ LIFF 静的アプリまたは _routes.json に問題"
+    FAIL=$((FAIL + 1))
+fi
+
 # CSV テンプレートのヘッダーチェック
 TOTAL=$((TOTAL + 1))
 if grep -q "key,value,description,updatedAt" sheet-template/Config.csv && \
@@ -124,7 +165,7 @@ fi
 TOTAL=$((TOTAL + 1))
 if grep -q "Google Spreadsheet の作成" docs/setup.md && \
    grep -q "Google Apps Script の作成" docs/setup.md && \
-   grep -q "LINE Developers での LIFF 作成" docs/setup.md && \
+    grep -Eq "LINE Developers での (LIFF[[:space:]]*|LINE ミニアプリ)作成" docs/setup.md && \
    grep -q "動作確認" docs/setup.md && \
    grep -q "トラブルシューティング" docs/setup.md; then
     echo "✅ setup.md に全必要セクションが存在"
