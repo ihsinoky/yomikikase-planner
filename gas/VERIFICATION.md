@@ -156,6 +156,7 @@ Sprint 1 が完了したら、Sprint 2 で以下を実装します:
 ### GAS 読み取り API
 
 - [ ] `?action=getActiveSurvey&apiKey=...` にアクセスし、`survey` と `dates` を含む JSON が返る
+- [ ] `Surveys` シートの説明文セルずれが残っていても、`status=active` として復元されて返る
 - [ ] `Config.activeSurveyId` が未設定のとき、`ok: false` のエラー JSON が返る
 - [ ] `activeSurveyId` に対応する `Surveys.status` が `active` 以外のとき、エラー JSON が返る
 

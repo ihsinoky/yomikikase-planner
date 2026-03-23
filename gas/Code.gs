@@ -386,10 +386,42 @@ function getSheetRecords(sheetName) {
       record[String(headers[columnIndex])] = row[columnIndex];
     }
 
+    if (sheetName === 'Surveys') {
+      record = normalizeSurveySheetRecord(record);
+    }
+
     records.push(record);
   }
 
   return records;
+}
+
+function normalizeSurveySheetRecord(record) {
+  var normalized = record;
+  var extraUpdatedAt = getOptionalString(record['']);
+  var descriptionPrefix;
+
+  if (isKnownSurveyStatus(getOptionalString(record.status))) {
+    return normalized;
+  }
+
+  if (!isKnownSurveyStatus(getOptionalString(record.createdAt))) {
+    return normalized;
+  }
+
+  descriptionPrefix = getOptionalString(record.description);
+  normalized.description = [descriptionPrefix, getOptionalString(record.status)].filter(function(value) {
+    return value;
+  }).join(' ');
+  normalized.status = getOptionalString(record.createdAt);
+  normalized.createdAt = record.updatedAt;
+  normalized.updatedAt = extraUpdatedAt || record.updatedAt;
+
+  return normalized;
+}
+
+function isKnownSurveyStatus(value) {
+  return value === 'draft' || value === 'active' || value === 'closed';
 }
 
 function findRecordByField(records, fieldName, expectedValue) {

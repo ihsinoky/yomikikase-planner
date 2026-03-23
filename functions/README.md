@@ -160,6 +160,22 @@ GET /api/gas/surveys
 }
 ```
 
+### `/api/survey`
+
+ブラウザプレビューや簡易動作確認向けの公開アンケート取得エンドポイント。
+
+**ファイル**: `functions/api/survey.js`
+
+**リクエスト**:
+```bash
+GET /api/survey
+```
+
+**用途**:
+- LIFF 初期化なしで最新アンケート表示を確認したいとき
+- `/?preview=1` から実データを読み込みたいとき
+- 認証必須の `/api/users` や `/api/gas/responses` を触る前の疎通確認
+
 ### `/api/users`
 
 LINE ID トークンを検証したうえで、現在のユーザー情報を取得・登録するエンドポイント。

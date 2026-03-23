@@ -373,6 +373,21 @@
       <div id="status" class="status loading">初期化しています...</div>
     </section>
 
+    <section id="modeCard" class="card hidden">
+      <h2>動作モード</h2>
+      <div class="split">
+        <div class="metric">
+          <span class="label">現在のモード</span>
+          <span id="modeValue" class="value"></span>
+        </div>
+        <div class="metric">
+          <span class="label">確認対象</span>
+          <span id="modeDescription" class="value"></span>
+        </div>
+      </div>
+      <p id="modeHelper" class="helper"></p>
+    </section>
+
     <section id="profileCard" class="card hidden">
       <h2>利用者情報</h2>
       <div class="split">
@@ -428,12 +443,19 @@
       <div id="logList" class="log-list"></div>
     </section>
 
+    <section id="previewResultCard" class="card hidden">
+      <h2>プレビュー送信結果</h2>
+      <p class="helper">このモードでは送信内容を画面上に表示するだけで、実際の保存は行いません。</p>
+      <pre id="previewPayload" class="log-item"></pre>
+    </section>
+
     <p class="footer-note">API は Cloudflare Functions 経由で Google Apps Script に中継されます。</p>
   </main>
 
   <script>
     const state = {
       config: null,
+      isPreview: false,
       liffId: '',
       idToken: '',
       profile: null,
@@ -462,8 +484,86 @@
       document.getElementById(id).classList.toggle('hidden', !visible);
     }
 
+    function isPreviewModeRequested() {
+      const preview = new URLSearchParams(window.location.search).get('preview');
+      return preview === '1' || preview === 'true';
+    }
+
     function getLiffIdFromUrl() {
       return new URLSearchParams(window.location.search).get('liffId') || '';
+    }
+
+    function getSurveyEndpoint() {
+      return '/api/survey';
+    }
+
+    function buildPreviewProfile() {
+      return {
+        displayName: 'プレビュー利用者',
+        userId: 'preview-user'
+      };
+    }
+
+    function buildPreviewUser() {
+      return {
+        childName: 'プレビュー園児',
+        grade: '年中',
+        class: 'さくら組'
+      };
+    }
+
+    function renderMode() {
+      const modeValue = document.getElementById('modeValue');
+      const modeDescription = document.getElementById('modeDescription');
+      const modeHelper = document.getElementById('modeHelper');
+
+      if (state.isPreview) {
+        modeValue.textContent = 'プレビュー';
+        modeDescription.textContent = '実データの表示と入力導線の確認';
+        modeHelper.textContent = 'LIFF 初期化と LINE ログインをスキップし、アンケート表示と入力検証だけを確認します。';
+      } else {
+        modeValue.textContent = 'LIFF 本番導線';
+        modeDescription.textContent = 'LINE ログインを含む本番フロー';
+        modeHelper.textContent = 'プロフィール取得と回答保存には LIFF の ID トークンを利用します。';
+      }
+
+      showSection('modeCard', true);
+    }
+
+    function getSampleSurveyData() {
+      return {
+        survey: {
+          surveyId: 'preview_survey_001',
+          title: 'プレビュー用 読み聞かせ参加希望調査',
+          description: 'この画面は LIFF を使わずに表示確認するためのプレビューです。候補日の選択、送信導線、表示崩れの確認に使えます。'
+        },
+        dates: [
+          {
+            surveyDateId: 'preview_date_001',
+            dateTime: '2026-04-10 10:00:00',
+            targetGrade: '年少',
+            label: '4月10日(金) 10:00〜 年少',
+            sortOrder: 1,
+            notes: ''
+          },
+          {
+            surveyDateId: 'preview_date_002',
+            dateTime: '2026-04-11 10:00:00',
+            targetGrade: '年中',
+            label: '4月11日(土) 10:00〜 年中',
+            sortOrder: 2,
+            notes: ''
+          },
+          {
+            surveyDateId: 'preview_date_003',
+            dateTime: '2026-04-12 10:00:00',
+            targetGrade: '年長',
+            label: '4月12日(日) 10:00〜 年長',
+            sortOrder: 3,
+            notes: 'プレビュー用のサンプル候補日です'
+          }
+        ]
+      };
     }
 
     async function fetchConfig() {
@@ -502,8 +602,32 @@
     }
 
     async function initializeLiff() {
-      state.config = await fetchConfig();
+      state.isPreview = isPreviewModeRequested();
+
+      try {
+        state.config = await fetchConfig();
+      } catch (error) {
+        if (!state.isPreview) {
+          throw error;
+        }
+
+        state.config = {
+          liffId: '',
+          apiBaseUrl: window.location.origin + '/api',
+          environment: 'preview-local'
+        };
+        appendLog('プレビュー用のローカル設定を使用します: ' + error.message);
+      }
+
       state.liffId = getLiffIdFromUrl() || state.config.liffId || '';
+
+      renderMode();
+
+      if (state.isPreview) {
+        state.profile = buildPreviewProfile();
+        state.user = buildPreviewUser();
+        return true;
+      }
 
       if (!state.liffId) {
         throw new Error('LIFF_ID が未設定です');
@@ -535,7 +659,9 @@
       document.getElementById('displayNameValue').textContent = state.profile.displayName || '(未設定)';
       document.getElementById('lineUserIdValue').textContent = state.profile.userId;
 
-      if (state.user) {
+      if (state.isPreview) {
+        document.getElementById('profileSummary').textContent = 'プレビューモードです。ユーザー登録と保存処理は実行されません。';
+      } else if (state.user) {
         document.getElementById('profileSummary').textContent =
           state.user.childName + ' / ' + state.user.grade + ' / ' + state.user.class;
       } else {
@@ -546,11 +672,23 @@
     }
 
     async function loadCurrentUser() {
+      if (state.isPreview) {
+        return;
+      }
+
       const result = await apiRequest('/api/users');
       state.user = result.user;
     }
 
     async function registerCurrentUser(formData) {
+      if (state.isPreview) {
+        state.user = buildPreviewUser();
+        renderProfile();
+        showSection('registrationCard', false);
+        updateStatus('プレビュー利用者をセットしました。アンケートを読み込みます...', 'success');
+        return;
+      }
+
       const payload = {
         childName: formData.get('childName'),
         grade: formData.get('grade'),
@@ -568,9 +706,26 @@
     }
 
     async function loadSurvey() {
-      const result = await apiRequest('/api/gas/surveys', { method: 'GET' });
-      state.survey = result.survey;
-      state.dates = result.dates || [];
+      try {
+        const result = await apiRequest(getSurveyEndpoint(), { method: 'GET' });
+        state.survey = result.survey;
+        state.dates = result.dates || [];
+      } catch (error) {
+        if (!state.isPreview) {
+          throw error;
+        }
+
+        const sample = getSampleSurveyData();
+        state.survey = sample.survey;
+        state.dates = sample.dates;
+        appendLog('プレビュー用のサンプルアンケートを使用します: ' + error.message);
+      }
+    }
+
+    function renderPreviewPayload(payloads) {
+      const previewPayload = document.getElementById('previewPayload');
+      previewPayload.textContent = JSON.stringify(payloads, null, 2);
+      showSection('previewResultCard', true);
     }
 
     function renderSurvey() {
@@ -659,6 +814,7 @@
       const form = document.getElementById('surveyForm');
       const submitButton = document.getElementById('surveySubmit');
       const formData = new FormData(form);
+      const payloads = [];
       let index;
 
       for (index = 0; index < state.dates.length; index += 1) {
@@ -671,14 +827,24 @@
 
       try {
         for (index = 0; index < state.dates.length; index += 1) {
+          payloads.push({
+            surveyId: state.survey.surveyId,
+            surveyDateId: state.dates[index].surveyDateId,
+            answer: formData.get('answer-' + state.dates[index].surveyDateId),
+            notes: ''
+          });
+        }
+
+        if (state.isPreview) {
+          renderPreviewPayload(payloads);
+          updateStatus('プレビュー送信を確認しました。実際の保存はしていません。', 'success');
+          return;
+        }
+
+        for (index = 0; index < payloads.length; index += 1) {
           await apiRequest('/api/gas/responses', {
             method: 'POST',
-            body: JSON.stringify({
-              surveyId: state.survey.surveyId,
-              surveyDateId: state.dates[index].surveyDateId,
-              answer: formData.get('answer-' + state.dates[index].surveyDateId),
-              notes: ''
-            })
+            body: JSON.stringify(payloads[index])
           });
         }
 
@@ -700,6 +866,14 @@
       updateStatus('プロフィールを確認しています...', 'loading');
       await loadCurrentUser();
       renderProfile();
+
+      if (state.isPreview) {
+        updateStatus('プレビューモードで最新アンケートを読み込んでいます...', 'loading');
+        await loadSurvey();
+        renderSurvey();
+        updateStatus('プレビューモードでアンケートを確認できます', 'success');
+        return;
+      }
 
       if (!state.user) {
         showSection('registrationCard', true);
@@ -745,7 +919,7 @@
         }
       });
 
-      if (typeof liff === 'undefined') {
+      if (typeof liff === 'undefined' && !isPreviewModeRequested()) {
         updateStatus('LIFF SDK を読み込めませんでした', 'error');
         return;
       }
