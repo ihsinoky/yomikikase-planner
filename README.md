@@ -119,3 +119,41 @@ yomikikase-planner/
 - 絵本記録機能は、データモデルを活かして段階的に足していく
 
 詳細は Milestone.md を参照。
+
+## CI/CD とデプロイ自動化
+
+GitHub Actions で以下を自動化しています。
+
+- Pull Request / `main` / `develop` への push 時
+  - `npm run lint`
+  - `npm run test`
+  - `npm run build`
+- `main` への push 時
+  - Vercel 本番デプロイ
+  - `DATABASE_URL` が設定されていれば `prisma migrate deploy`
+
+ワークフロー定義: [.github/workflows/ci.yaml](.github/workflows/ci.yaml)
+
+### GitHub Secrets に必要な値
+
+Vercel 本番デプロイを有効にするには、GitHub リポジトリの Secrets に以下を設定してください。
+
+- `VERCEL_TOKEN`
+- `VERCEL_ORG_ID`
+- `VERCEL_PROJECT_ID`
+- `DATABASE_URL`（Prisma マイグレーションも自動化する場合）
+
+### Vercel 側で設定しておくもの
+
+- Production 環境の環境変数
+  - `DATABASE_URL`
+  - `ADMIN_USERNAME`
+  - `ADMIN_PASSWORD`
+  - `AUTH_SECRET`
+  - 今後 LIFF を使う場合は LINE 関連の環境変数
+
+### 補足
+
+- `main` にマージされると、本番デプロイが自動で走ります。
+- DB マイグレーションを GitHub Actions 側でも実行する構成です。
+- `DATABASE_URL` を GitHub Secrets に入れていない場合は、デプロイのみ実行されます。
