@@ -33,6 +33,9 @@
 - **[Architecture Design](../ArchitectureDesign.md)**
   - 現在のシステム構成と役割分担
 
+- **[運用方針メモ](pivot-plan.md)**
+  - 現在の運用原則と優先順位
+
 - **[Spreadsheet スキーマ定義](sheets-schema.md)**
   - 各タブ（Config、Surveys、Users、Responses、Logs）の列定義
 
@@ -120,6 +123,7 @@ docs/
 │   └── cloudflare-secrets-setup.md        # Cloudflare 環境変数設定
 │
 ├── 📐 アーキテクチャ
+│   ├── pivot-plan.md                       # 運用方針メモ
 │   └── sheets-schema.md                    # Spreadsheet スキーマ
 │
 ├── 🔧 運用・保守

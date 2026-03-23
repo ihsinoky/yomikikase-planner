@@ -1,74 +1,82 @@
-# 軌道修正計画（Pivot Plan）: Google Spreadsheet + Apps Script + Static LIFF
+# 運用方針メモ
 
-## 1. 結論（意思決定）
-- データの正：Google Spreadsheet
-- API/配信：Google Apps Script（Web App）
-- 参加者UI：LIFF（静的HTML/JS、依存最小）
-- 管理UI：まずは Spreadsheet（必要最小限の運用）。追加UIは「必要になってから」
+この文書は、yomikikase-planner の現在の運用方針と優先順位を短くまとめたメモです。
 
-**理由**
-- 個人運用で更新頻度が低い（1ヶ月〜1年）ため、Node/Next の依存更新追従を前提にしない構成にする
-- 公開面を最小化し、運用負荷（セキュリティ対応・デプロイ・DB保守）を下げる
+---
 
-## 2. 既存資産の扱い（Legacy戦略）
-- 現行 main（Next.js/Prisma）は `legacy/nextjs-2025-12` に保存
-- PR ihsinoky/yomikikase-planner#18 は「参照用にブランチは残すが採用しない」方針で Close
-- Issue ihsinoky/yomikikase-planner#11/#12 は Superseded で Close（必要な要件は新方式で起票し直す）
+## 1. 現在の前提
 
-## 3. アーキテクチャ（新方式）
+- データの正は Google Spreadsheet に置く
+- バックエンド処理は Google Apps Script Web App が担う
+- 参加者 UI は LIFF 静的アプリで提供する
+- フロントエンドからの API アクセスは Cloudflare Pages Functions 経由に統一する
+- 管理運用はまず Spreadsheet を中心に行い、必要な補助機能だけを追加する
 
-### 3.1 コンポーネント
-- Google Spreadsheet
-  - Surveys / SurveyDates / Users / Responses / Config 等のタブで保持
-- Google Apps Script（Web App）
-  - `doGet()`：LIFF 用 HTML を返す（同一オリジンでCORS事故を避ける）
-  - `doPost()` or `google.script.run`：回答送信、Sheet書き込み、（必要なら）LINE token 検証
-- LIFF（HTML/JS）
-  - 初回プロフィール登録（必要なら）
-  - 最新アンケート表示・回答送信（MVPでは最新1件だけでOK）
+---
 
-### 3.2 データ設計（Sheets タブ案）
-- `Config`
-  - `activeSurveyId`
-  - `liffId`（任意）
-- `Surveys`
-  - `surveyId`, `fiscalYear`, `title`, `description`, `status`, `createdAt`
-- `SurveyDates`
-  - `surveyDateId`, `surveyId`, `dateTime`, `targetGrade`, `label`, `sortOrder`
-- `Users`
-  - `lineUserId`, `displayName?`, `childName`, `grade`, `class`, `createdAt`, `updatedAt`
-- `Responses`（1行＝1候補日への回答）
-  - `responseId`, `surveyId`, `surveyDateId`, `lineUserId`, `answer`, `submittedAt`
+## 2. 運用原則
 
-### 3.3 セキュリティ/運用ポリシー（最低限）
-- Spreadsheet は共有範囲を最小化（編集者は管理者のみ）
-- LIFF 側のアクセストークン等は長期保存しない（都度認証・都度識別）
-- GAS 側で同時書き込み対策（LockService）を入れる
-- ログ（失敗時）を `Logs` シートへ記録（原因追跡できるように）
+### 2.1 シンプルさを優先する
 
-## 4. スプリント計画（概要）
-### Sprint 0（いまやる）
-- legacy 保存
-- PR/Issue 整理
-- 計画を Markdown 化（この Issue）
-- README から参照導線追加
+- 依存関係が重い構成は避ける
+- 少人数・低頻度運用でも維持できる形を優先する
+- 運用フローを複雑化させる前に、Spreadsheet で吸収できるかを確認する
 
-### Sprint 1（骨格）
-- Sheets テンプレ作成
-- GAS Web App 作成（HTML配信）
-- LIFF 初期表示（ログイン→画面表示）
+### 2.2 公開面を最小化する
 
-### Sprint 2（MVP）
-- 最新アンケート取得（Surveys + SurveyDates）
-- 回答送信→Sheet保存
-- 集計（ピボット/関数）で "参加可否" を見える化
+- フロントエンドは GAS URL を直接参照しない
+- API 呼び出しは `/api/*` に集約する
+- GAS への直接アクセスは API キーで制御する
 
-### Sprint 3（運用固め）
-- 運用手順書（Sheets編集手順、エラー時の対応）
-- 権限、バックアップ（テンプレ複製）など
+### 2.3 最新状態を文書に反映する
 
-## 5. Done 定義（新方式MVPが成立した状態）
-- 管理者が Sheets でアンケートを用意できる
-- 保護者が LIFF で回答でき、Responses に記録される
-- 候補日別の参加可否が Sheets で集計できる
-- README から "新方式の使い方/計画" に辿れる
+- 一般向け文書には最新の真の状態だけを書く
+- 進捗は `Milestone.md` を基準に管理する
+- 判断の背景や履歴が必要な場合のみ ADR を参照する
+
+---
+
+## 3. 現在の実装段階
+
+### 完了済み
+
+- Spreadsheet テンプレート整備
+- GAS Web App 骨格実装
+- LIFF 初期化とプロフィール取得
+- Cloudflare Pages / Functions への移行
+- API キー必須化と JSONP 廃止
+
+### 進行中
+
+- 最新アンケート取得 API
+- LIFF での候補日表示
+- 回答送信と `Responses` シート保存
+- `Users` シート連携
+- ID トークン検証
+
+### 後続
+
+- 管理・運用補助機能の整備
+- 絵本記録機能
+- データライフサイクル管理
+
+---
+
+## 4. 直近の優先事項
+
+1. LIFF で最新アンケートを取得できるようにする
+2. 回答を `Responses` シートへ保存できるようにする
+3. 初回プロフィール登録と `Users` シート連携を実装する
+4. Spreadsheet 上で結果確認しやすい形を整える
+
+---
+
+## 5. Done の考え方
+
+MVP が成立したとみなす条件は次のとおりです。
+
+- 管理者が Spreadsheet でアンケートを用意できる
+- 保護者が LIFF で回答できる
+- 回答が `Responses` に保存される
+- 候補日ごとの参加可否を Spreadsheet 上で確認できる
+- セットアップ手順と運用手順がドキュメント化されている
