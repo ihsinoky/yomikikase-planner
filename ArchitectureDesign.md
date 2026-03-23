@@ -1,247 +1,178 @@
 # Architecture Design
 
-幼稚園の絵本読み聞かせ活動を支える LINE ミニアプリ＋管理 Web アプリのアーキテクチャ設計メモです。
+幼稚園の絵本読み聞かせ活動を支えるシステムの現行アーキテクチャを記録します。
 
 ---
 
-## 1. ドメイン概要
+## 1. 目的
 
-### 1.1 活動の単位
+このシステムは、保護者が LINE ミニアプリから参加可否を回答し、運営側が Spreadsheet を中心に日程運用できる状態を目指します。
 
-- 活動は **年度単位**（例：2025年度）で区切る
-- 各年度の中で、月3回を基本とした読み聞かせ会
-  - 年少
-  - 年中
-  - 年長
-- 各回には「参加希望アンケート」と「確定した日程・参加者」が存在する
-
-### 1.2 登場人物と情報
-
-- 保護者（User）
-  - LINE アカウントで一意に識別（`line_user_id`）
-  - 年度ごとに「学年・クラス」を持つ（`UserYearProfile`）
-- 管理者
-  - 幼稚園 or 読み聞かせ運営側
-  - Web 管理画面から操作
-- 絵本（Book）
-  - ISBN / タイトル / 著者 / 表紙画像URL など
-  - 読み聞かせで使われた履歴（BookReadingRecord）を持つ
+- データの正は Google Spreadsheet に置く
+- LIFF は参加者向けの最小 UI として維持する
+- API は Cloudflare Functions 経由で GAS に集約する
+- 管理 UI はまず Spreadsheet 運用を前提とし、不足部分だけ補助機能を追加する
 
 ---
 
-## 2. ユースケース
+## 2. コンポーネント構成
 
-### 2.1 アンケート関連（MVP）
+### 2.1 Google Spreadsheet
 
-1. 管理者が「年度」と「アンケート」を作成
-2. 開催候補日を登録（日時＋学年）
-3. LINE グループにミニアプリのリンクを共有
-4. 保護者がミニアプリからアンケートページを開く
-5. 保護者は候補日ごとの参加可否を回答
-6. 管理者が Web 管理画面で結果を閲覧・CSV 出力
-7. 管理者が別ツールで候補を検討し、「確定日程＋参加者」を管理画面に登録
+- システムのマスターデータを保持する
+- 現在の主なタブ:
+  - `Config`
+  - `Surveys`
+  - `SurveyDates`
+  - `Users`
+  - `Responses`
+  - `Logs`
 
-### 2.2 絵本記録（将来）
+### 2.2 Google Apps Script Web App
 
-1. 管理者が「読み終えた絵本」をアプリに登録
-   - ISBN から書誌情報を取得して Book を作成
-2. 「いつ・どの年度・どの学年（クラス）で読んだか」を BookReadingRecord に記録
-3. 次回の絵本選びで「同学年で過去に読んだ / まだ読んでいない本」を確認
+- Spreadsheet の読み書きと最低限の API を担当する
+- 現在の実装済み機能:
+  - `doGet()`
+  - `doPost()` の骨格
+  - `health` API
+  - HTML 配信
+  - Logs シート記録
+  - LockService による排他制御
 
----
+### 2.3 Cloudflare Pages Functions
 
-## 3. システム構成
+- フロントエンドからの API アクセスを同一オリジンの `/api/*` に統一する
+- 現在の実装済み機能:
+  - `/api/health`
+  - `/api/config`
+  - `/api/gas/health`
 
-### 3.1 コンポーネント
+### 2.4 LIFF 静的アプリ
 
-- **LIFFフロントエンド（保護者向け）**
-  - LINE アプリ内で起動する Web アプリ
-  - 主な責務：
-    - LINE ログイン（userId の取得）
-    - 初回プロフィール登録（名前・学年・クラス）
-    - アンケートの回答
-
-- **管理用 Web フロントエンド（管理者向け）**
-  - ブラウザからアクセスする通常の Web アプリ
-  - 主な責務：
-    - アンケート作成・編集
-    - アンケート結果の閲覧・CSV エクスポート
-    - 確定日程・参加者の登録・閲覧
-    - （将来）絵本マスタ・読書履歴の管理
-
-- **バックエンド API**
-  - REST API（必要なら後で GraphQL 等に拡張）
-  - 主な責務：
-    - 認証・認可（管理者 / 一般ユーザー）
-    - ドメインロジック（アンケート・日程・絵本）
-    - DB アクセス
-    - 外部 API（LINE, 書誌情報）との連携
-
-- **データベース**
-  - RDBMS（PostgreSQL / MySQL系）
-  - トランザクション整合性・検索性重視
-
-- **外部サービス**
-  - LINE Messaging API / LIFF
-  - 書誌情報 API（Google Books 等）
-
-### 3.2 コンテキスト図（テキスト版）
-
-- 保護者  
-  ⇔ LINE アプリ  
-  ⇔ LIFF フロントエンド  
-  ⇔ バックエンド API  
-  ⇔ DB
-
-- 管理者  
-  ⇔ 管理用 Web フロントエンド  
-  ⇔ バックエンド API  
-  ⇔ DB
-
-- バックエンド API  
-  ⇔ LINE API（ユーザー検証・メッセージ送信 etc.）  
-  ⇔ 書誌情報 API
+- 参加者向け UI を提供する
+- 現在の実装済み機能:
+  - `liff.init()`
+  - `liff.isLoggedIn()`
+  - `liff.getProfile()`
+  - デバッグ表示
+  - `health` 疎通確認
 
 ---
 
-## 4. データモデル（概要）
+## 3. 現在のリクエストフロー
 
-### 4.1 年度とユーザー
+### 3.1 参加者の利用フロー
 
-- `SchoolYear`
-  - `id`
-  - `name` (例: "2025年度")
-  - `start_date`
-  - `end_date`
-  - `is_active`
+1. 参加者が LINE から LIFF を起動する
+2. LIFF が Cloudflare Pages 上の静的アプリを表示する
+3. LIFF が `/api/*` を呼ぶ
+4. Cloudflare Functions が必要に応じて GAS に中継する
+5. GAS が Spreadsheet を読み書きする
 
-- `User`
-  - `id`
-  - `line_user_id`
-  - `display_name`
-  - `created_at`
+### 3.2 運営側の利用フロー
 
-- `UserYearProfile`
-  - `id`
-  - `user_id`
-  - `school_year_id`
-  - `grade` (年少 / 年中 / 年長)
-  - `class_name`
-  - `created_at`
+1. 運営側が Spreadsheet でアンケート情報を管理する
+2. 必要に応じて Logs タブや Cloudflare ログで障害を切り分ける
+3. 回答機能の実装完了後は、Spreadsheet 上で結果確認と運用判断を行う
 
-### 4.2 アンケート
+---
 
-- `Survey`
-  - `id`
-  - `school_year_id`
+## 4. データモデル
+
+### 4.1 現在のシート構成
+
+- `Config`
+  - `activeSurveyId`
+  - `liffId`
+- `Surveys`
+  - `surveyId`
+  - `fiscalYear`
   - `title`
   - `description`
-  - `created_at`
-
-- `SurveyDate`
-  - `id`
-  - `survey_id`
-  - `date` (datetime or date)
+  - `status`
+  - `createdAt`
+- `SurveyDates`
+  - `surveyDateId`
+  - `surveyId`
+  - `dateTime`
+  - `targetGrade`
+  - `label`
+  - `sortOrder`
+- `Users`
+  - `lineUserId`
+  - `displayName`
+  - `childName`
   - `grade`
+  - `class`
+  - `createdAt`
+  - `updatedAt`
+- `Responses`
+  - `responseId`
+  - `surveyId`
+  - `surveyDateId`
+  - `lineUserId`
+  - `answer`
+  - `submittedAt`
+- `Logs`
+  - `logId`
+  - `timestamp`
+  - `level`
+  - `source`
+  - `message`
+  - `details`
 
-- `Response`
-  - `id`
-  - `survey_id`
-  - `user_id`
-  - `created_at`
-
-- `ResponseDetail`
-  - `id`
-  - `response_id`
-  - `survey_date_id`
-  - `status` (参加可 / 参加不可)
-
-### 4.3 確定日程
-
-- `ConfirmedEvent`
-  - `id`
-  - `school_year_id`
-  - `date`
-  - `grade`
-  - `class_name` (任意)
-  - `created_at`
-
-- `ConfirmedParticipant`
-  - `id`
-  - `confirmed_event_id`
-  - `user_id` もしくは `participant_name` + `grade` + `class_name`
-  - `created_at`
-
-### 4.4 絵本
-
-- `Book`
-  - `id`
-  - `title`
-  - `author`
-  - `publisher`
-  - `isbn`
-  - `cover_image_url`
-  - `created_at`
-
-- `BookReadingRecord`
-  - `id`
-  - `book_id`
-  - `school_year_id`
-  - `date`
-  - `grade`
-  - `class_name`
-  - `notes`
-  - `created_at`
+詳細は `docs/sheets-schema.md` を参照します。
 
 ---
 
-## 5. 認証・認可
+## 5. 現在の実装状況
 
-### 5.1 保護者（LIFF側）
+### 5.1 実装済み
 
-- LIFF SDK から IDトークン or アクセストークンを取得
-- バックエンド側でトークンを検証し、`line_user_id` を取得
-- `User` に存在しない場合は新規作成
-- フロント側ではログイン UI を明示的に出さず、「LINE で開いたらそのまま認証済み」という体験にする
+- Spreadsheet テンプレート
+- GAS Web App 骨格
+- LIFF 初期化とプロフィール取得
+- Cloudflare Pages / Functions への移行
+- API キー必須化と JSONP 廃止
 
-### 5.2 管理者（Web 管理画面）
+### 5.2 未実装
 
-- シンプルな ID/PW 認証から開始
-  - 将来、園の Google アカウントや別の SSO に移行してもよい
-- ロールとしては最低限：
-  - `admin`（全操作可）
-
----
-
-## 6. データライフサイクル / プライバシー
-
-- 人に紐づくデータ（アンケート・参加者情報など）
-  - 原則として **年度単位で完結**
-  - ポリシー例：
-    - 「年度終了後◯年で削除」
-    - または「卒園タイミングで一括削除」
-- 絵本の履歴
-  - 個人情報と紐づけずに、「年度・学年・クラス・日付」のみ記録
-  - 長期的に残してよい前提
-
-- 「アプリを畳む」場合に備えて：
-  - `SchoolYear` 単位、またはシステム全体の「一括削除」機能を設計に含める
-  - 削除前に CSV などへのエクスポートを行えるようにする
+- 最新アンケート取得 API
+- 回答送信 API
+- `Users` / `Responses` 連携
+- 初回プロフィール登録フロー
+- ID トークン検証
+- 管理・運用補助 UI
 
 ---
 
-## 7. 今後の拡張アイデア（メモ）
+## 6. セキュリティと運用
 
-- 公平性を考慮した自動割当ロジック
-  - 連続参加ペナルティ
-  - 累積参加回数ペナルティ
-  - 同じ学年の他クラスへの割当ペナルティ
-- LINE からの自動通知
-  - アンケート開始のお知らせ
-  - 確定日程のお知らせ
-- 絵本レコメンド
-  - 学年・季節・テーマから「まだ読んでいないおすすめ本」を提案
-- 複数園対応（マルチテナント化）
-  - `Kindergarten` テーブルを追加し、園ごとにデータを分離
+- フロントエンドは GAS URL を直接参照しない
+- Cloudflare Functions から GAS に API キー付きでアクセスする
+- GAS は API キーなしの直接アクセスを拒否する
+- JSONP は廃止済み
+- ログには個人識別情報を残さない
+- Cloudflare 側と Spreadsheet Logs の両方でトラブルシューティングする
+
+---
+
+## 7. リポジトリ構成
+
+- `liff/`: LIFF 静的アプリ
+- `functions/`: Cloudflare Pages Functions
+- `gas/`: Google Apps Script Web App
+- `sheet-template/`: Spreadsheet テンプレート
+- `docs/`: セットアップ・運用・進捗ドキュメント
+
+---
+
+## 8. 今後の拡張
+
+- 回答一覧のフィルタと CSV 出力の整備
+- 確定日程・参加者登録の運用整備
+- 絵本記録機能
+- データライフサイクル管理
+- 監視 / レート制限 / アラート整備
 
 ---

@@ -30,19 +30,11 @@
 
 ### 現在のアーキテクチャ（Cloudflare Pages）
 
-- **[ADR-001: Cloudflare Pages + Functions 採用](adr/001-adopt-cloudflare-pages-functions.md)**
-  - アーキテクチャ決定の背景と理由
-  - ロールバック手順を含む
+- **[Architecture Design](../ArchitectureDesign.md)**
+  - 現在のシステム構成と役割分担
 
 - **[Spreadsheet スキーマ定義](sheets-schema.md)**
   - 各タブ（Config、Surveys、Users、Responses、Logs）の列定義
-
-### 軌道修正の経緯
-
-- **[軌道修正計画（Pivot Plan）](pivot-plan.md)**
-  - Next.js/Prisma → Spreadsheet + GAS への方針転換
-
----
 
 ## 🔧 運用・保守
 
@@ -128,11 +120,7 @@ docs/
 │   └── cloudflare-secrets-setup.md        # Cloudflare 環境変数設定
 │
 ├── 📐 アーキテクチャ
-│   ├── adr/                                # アーキテクチャ決定記録
-│   │   ├── README.md
-│   │   └── 001-adopt-cloudflare-pages-functions.md
-│   ├── sheets-schema.md                    # Spreadsheet スキーマ
-│   └── pivot-plan.md                       # 軌道修正計画
+│   └── sheets-schema.md                    # Spreadsheet スキーマ
 │
 ├── 🔧 運用・保守
 │   ├── logging-strategy.md                 # ログ戦略
