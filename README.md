@@ -128,6 +128,9 @@ GitHub Actions で以下を自動化しています。
   - `npm run lint`
   - `npm run test`
   - `npm run build`
+- Pull Request 時（同一リポジトリ内のPR）
+  - Vercel Preview デプロイ
+  - PR に Preview URL を自動コメント
 - `main` への push 時
   - Vercel 本番デプロイ
   - `DATABASE_URL` が設定されていれば `prisma migrate deploy`
@@ -143,14 +146,111 @@ Vercel 本番デプロイを有効にするには、GitHub リポジトリの Se
 - `VERCEL_PROJECT_ID`
 - `DATABASE_URL`（Prisma マイグレーションも自動化する場合）
 
+#### Secrets の取得手順
+
+1. Vercel ダッシュボードで対象プロジェクトを開く
+2. `Settings` → `General` から以下を確認する
+  - `Project ID` → `VERCEL_PROJECT_ID`
+  - `Team ID` または `Organization ID` → `VERCEL_ORG_ID`
+3. Vercel ダッシュボード右上のアカウント設定から `Tokens` を開く
+4. 新しいトークンを発行し、`VERCEL_TOKEN` として GitHub Secrets に登録する
+5. GitHub リポジトリの `Settings` → `Secrets and variables` → `Actions` で各 Secret を追加する
+6. Prisma の本番マイグレーションも GitHub Actions で実行したい場合は、`DATABASE_URL` も同じ画面で登録する
+
+補足:
+
+- `VERCEL_ORG_ID` / `VERCEL_PROJECT_ID` は、手元で一度 `vercel link` を実行したときに生成される `.vercel/project.json` でも確認できます。
+- Secrets は GitHub の Repository secrets に入れてください。
+
+#### Vercel プロジェクト初期リンク手順
+
+まだ GitHub リポジトリと Vercel プロジェクトを紐付けていない場合は、最初に以下を実施してください。
+
+1. Vercel で新しいプロジェクトを作成する
+2. この GitHub リポジトリを Vercel プロジェクトに接続する
+3. ローカルで Vercel CLI を使ってログインする
+  - `npx vercel login`
+4. リポジトリ直下でプロジェクトをリンクする
+  - `npx vercel link`
+5. 生成された `.vercel/project.json` から以下を確認する
+  - `projectId` → `VERCEL_PROJECT_ID`
+  - `orgId` → `VERCEL_ORG_ID`
+6. GitHub Secrets に `VERCEL_TOKEN` / `VERCEL_PROJECT_ID` / `VERCEL_ORG_ID` を登録する
+
+注意:
+
+- `.vercel/` はローカル確認用です。通常はコミット不要です。
+- GitHub 連携だけでも Vercel 自体の自動デプロイはできますが、このリポジトリでは GitHub Actions から明示的に Preview / Production を制御する構成にしています。
+
 ### Vercel 側で設定しておくもの
 
-- Production 環境の環境変数
+- Preview / Production 環境の環境変数
   - `DATABASE_URL`
   - `ADMIN_USERNAME`
   - `ADMIN_PASSWORD`
   - `AUTH_SECRET`
   - 今後 LIFF を使う場合は LINE 関連の環境変数
+
+Preview 環境でも動作確認したい場合は、少なくとも以下を Vercel の Preview Environment に設定してください。
+
+- `ADMIN_USERNAME`
+- `ADMIN_PASSWORD`
+- `AUTH_SECRET`
+- `DATABASE_URL`（DB接続が必要な確認を行う場合）
+
+本番DBを Preview から直接触りたくない場合は、Preview 用の別DBを用意してください。
+
+#### Preview 用 DB の作り方
+
+Preview 環境でフォーム作成や一覧取得まで確認したい場合は、Preview 専用の PostgreSQL を用意するのが安全です。
+
+代表的な選択肢:
+
+- Neon
+- Supabase
+- Railway
+- Render PostgreSQL
+
+基本手順:
+
+1. Preview 用の PostgreSQL インスタンスを作成する
+2. 接続文字列を取得する
+3. Vercel の `Settings` → `Environment Variables` で `Preview` 環境に `DATABASE_URL` を設定する
+4. 必要なら `ADMIN_USERNAME` / `ADMIN_PASSWORD` / `AUTH_SECRET` も `Preview` に設定する
+5. 初回デプロイ後、必要に応じて Preview DB に対して Prisma マイグレーションを適用する
+
+運用の考え方:
+
+- **安全重視:** Preview 用に本番とは別DBを使う
+- **コスト重視:** 1つの共有 Preview DB を使う
+- **厳密重視:** ブランチごとに分離した Preview DB を用意する
+
+このプロジェクトの規模なら、まずは **1つの共有 Preview DB** で十分です。
+
+注意:
+
+- Preview から本番DBを参照すると、テスト操作が本番データに混ざる可能性があります。
+- CSV 出力や一覧確認だけでも、将来的には回答データを書き込む機能が増える前提で、早めに Preview DB を分けるのが無難です。
+
+### Pull Request 時点での動作確認方法
+
+PR を作成すると、CI 成功後に Vercel Preview が自動デプロイされます。
+
+確認手順:
+
+1. PR のコメントに追加される Preview URL を開く
+2. 管理者ログインができることを確認する
+3. 主要画面を確認する
+  - アンケート一覧
+  - アンケート作成
+  - 回答一覧
+  - CSV ダウンロード
+4. 必要なら API の疎通も Preview 上で確認する
+
+制約:
+
+- Preview デプロイは、同一リポジトリ内の PR を対象にしています。
+- Fork からの PR では GitHub Secrets を安全に渡せないため、この自動 Preview は動きません。
 
 ### 補足
 
