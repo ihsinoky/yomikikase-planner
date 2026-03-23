@@ -1,41 +1,24 @@
-name: CI
+name: Verify Static Stack
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main ]
   pull_request:
-    branches: [ main, develop ]
+    branches: [ main ]
 
 permissions:
   contents: read
 
 jobs:
-  ci:
+  verify-sprint1-assets:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Use Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
+      - name: Make verification script executable
+        run: chmod +x scripts/verify-sprint1.sh
 
-      - name: Install dependencies
-        run: npm install
-
-      # 必要なら env をここで設定（例: DB_URL など）
-      # - name: Set up environment
-      #   run: echo "DB_URL=postgres://..." >> $GITHUB_ENV
-
-      - name: Run lint
-        run: npm run lint
-
-      - name: Run tests
-        run: npm run test
-
-      # Next.js やビルドがある場合
-      - name: Build
-        run: npm run build
+      - name: Verify Cloudflare/GAS/LIFF assets
+        run: ./scripts/verify-sprint1.sh

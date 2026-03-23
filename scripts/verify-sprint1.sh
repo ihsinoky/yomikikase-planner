@@ -124,7 +124,7 @@ fi
 TOTAL=$((TOTAL + 1))
 if grep -q "Google Spreadsheet の作成" docs/setup.md && \
    grep -q "Google Apps Script の作成" docs/setup.md && \
-   grep -q "LINE Developers での LIFF 作成" docs/setup.md && \
+    grep -Eq "LINE Developers での (LIFF|LINE ミニアプリ)作成" docs/setup.md && \
    grep -q "動作確認" docs/setup.md && \
    grep -q "トラブルシューティング" docs/setup.md; then
     echo "✅ setup.md に全必要セクションが存在"
