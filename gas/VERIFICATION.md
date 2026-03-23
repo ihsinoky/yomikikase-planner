@@ -148,3 +148,26 @@ Sprint 1 が完了したら、Sprint 2 で以下を実装します:
 - アンケートデータの取得（Surveys + SurveyDates）
 - 回答データの保存（Responses シート）
 - ユーザープロフィール管理（Users シート）
+
+---
+
+## Milestone 3 追加確認項目
+
+### GAS 読み取り API
+
+- [ ] `?action=getActiveSurvey&apiKey=...` にアクセスし、`survey` と `dates` を含む JSON が返る
+- [ ] `Config.activeSurveyId` が未設定のとき、`ok: false` のエラー JSON が返る
+- [ ] `activeSurveyId` に対応する `Surveys.status` が `active` 以外のとき、エラー JSON が返る
+
+### GAS ユーザー API
+
+- [ ] `?action=getUser&lineUserId=...&apiKey=...` にアクセスし、登録済みユーザーなら `user` が返る
+- [ ] 未登録ユーザーでは `ok: true, user: null` が返る
+- [ ] `action=registerUser` へ JSON を POST すると `Users` シートに行が追加または更新される
+
+### GAS 回答 API
+
+- [ ] `action=saveResponse` へ JSON を POST すると `Responses` シートに行が追加される
+- [ ] 同じ `lineUserId + surveyDateId` で再送したとき、既存行が更新される
+- [ ] `surveyDateId` がアクティブアンケート外のとき、保存されずエラーになる
+- [ ] `answer` が `可 / 不可 / 未定` 以外のとき、保存されずエラーになる

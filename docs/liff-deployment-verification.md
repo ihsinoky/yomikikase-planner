@@ -4,7 +4,7 @@
 
 このドキュメントは、Cloudflare Pages に LIFF 静的アプリをデプロイし、LINE ミニアプリで起動確認するための手順とチェックリストです。
 
-**目的**: Cloudflare Pages で静的 LIFF を配信し、LINE ミニアプリ内で `liff.init` → プロフィール取得まで動作することを確認する
+**目的**: Cloudflare Pages で静的 LIFF を配信し、LINE ミニアプリ内で `liff.init` → 初回登録 → アンケート回答送信まで動作することを確認する
 
 ---
 
@@ -60,6 +60,8 @@
 |--------|------|-----|
 | `GAS_BASE_URL` | GAS Web App の URL | `https://script.google.com/macros/s/ABC.../exec` |
 | `GAS_API_KEY` | API 認証キー（GAS のスクリプトプロパティと一致） | `your-random-secret-key` |
+| `LIFF_ID` | LIFF 初期化用 ID | `1234567890-abcdefgh` |
+| `LINE_LOGIN_CHANNEL_ID` | ID トークン検証に使う LINE チャネル ID | `2007654321` |
 
 **チェックリスト**:
 
@@ -70,17 +72,23 @@
 - [ ] `GAS_API_KEY` を追加
   - Environment: `Production` と `Preview` 両方にチェック
   - Value: GAS のスクリプトプロパティ `API_KEY` と同じ値
+- [ ] `LIFF_ID` を追加
+  - Environment: `Production` と `Preview` 両方にチェック
+  - Value: 利用する LIFF ID
+- [ ] `LINE_LOGIN_CHANNEL_ID` を追加
+  - Environment: `Production` と `Preview` 両方にチェック
+  - Value: LINE Developers Console のチャネル ID
 - [ ] 「Save」をクリック
 - [ ] 最新のデプロイを「Retry deployment」で再デプロイ
 - [ ] 再デプロイが完了するまで待機（1〜2分）
 
 ### 2.2. LIFF ID の設定方法
 
-LIFF ID は環境変数ではなく、**URL パラメータ**で指定します。
+LIFF ID は Cloudflare の `LIFF_ID` を基本とし、必要に応じて **URL パラメータ** で上書きできます。
 
 **理由**:
 - 同じ LIFF アプリで複数の LIFF ID を切り替えられる柔軟性
-- Cloudflare Pages の環境変数を使用せず、フロントエンドでの実装がシンプル
+- Cloudflare Pages の環境変数で本番値を固定しつつ、URL パラメータで検証値へ切り替えられる
 - LINE Developers Console で Endpoint URL を設定する際に LIFF ID を含める
 
 **設定方法**:
@@ -194,6 +202,11 @@ https://yomikikase-planner.pages.dev/?liffId={LIFF_ID}
     "message": "yomikikase-planner GAS Web App is running"
   }
   ```
+- [ ] アクティブアンケート取得 API を確認:
+  ```text
+  https://yomikikase-planner.pages.dev/api/gas/surveys
+  ```
+- [ ] `survey` と `dates` を含む JSON が返ることを確認
 
 ### 5.2. LIFF 初期化確認（ブラウザ）
 
@@ -217,7 +230,7 @@ https://yomikikase-planner.pages.dev/?liffId={LIFF_ID}
 
 ### 5.3. LINE アプリでの起動確認
 
-LINE アプリから LIFF を起動し、プロフィール取得まで動作することを確認します。
+LINE アプリから LIFF を起動し、プロフィール取得、初回登録、アンケート回答送信まで動作することを確認します。
 
 #### 5.3.1. LIFF URL の作成
 
@@ -238,26 +251,19 @@ https://miniapp.line.me/{LIFF_ID}?liffId={LIFF_ID}
 
 #### 5.3.3. 画面表示の確認
 
-- [ ] タイトルが表示される: **「📚 LIFF - 読み聞かせプランナー」**
-- [ ] ステータスが緑色で表示される: **「✅ すべての確認が完了しました」**
-- [ ] 以下の情報セクションが表示される:
-  - [ ] **「ℹ️ このページについて」** セクション
-  - [ ] **「🔍 デバッグログ」** セクション
+- [ ] タイトルが表示される: **「読み聞かせアンケート」**
+- [ ] LINE 表示名と LINE User ID が表示される
+- [ ] 未登録ユーザーではプロフィール登録フォームが表示される
+- [ ] 登録済みユーザーではアンケートカードが表示される
+- [ ] 候補日ごとに **可 / 不可 / 未定** の選択肢が表示される
 
-#### 5.3.4. デバッグログの確認
+#### 5.3.4. 送信フローの確認
 
-デバッグログに以下が表示されることを確認:
-
-- [ ] `[INFO] ページ読み込み完了`
-- [ ] `[INFO] LIFF SDK バージョン: 2.x.x`
-- [ ] `[INFO] LIFF ID: 1234567890...`
-- [ ] `[SUCCESS] ✅ liff.init() が成功しました`
-- [ ] `[INFO] 📱 環境情報`
-  - [ ] `isInClient: true (LINE アプリ内)` または `false (外部ブラウザ)`
-  - [ ] `isLoggedIn: true`
-  - [ ] `OS: ios` または `android`
-- [ ] `[INFO] 👤 プロフィール取得`
-- [ ] `[SUCCESS] ✅ liff.getProfile() が成功しました`
+- [ ] 初回アクセス時、プロフィール登録が成功する
+- [ ] `Users` シートに `lineUserId`, `childName`, `grade`, `class`, `fiscalYear` が保存される
+- [ ] すべての候補日に回答して「回答を送信」を押すと成功メッセージが出る
+- [ ] `Responses` シートに候補日ごとの行が保存される
+- [ ] 同じ候補日に再回答したとき、既存行が更新される
 - [ ] `[INFO] User ID: U...`
 - [ ] `[INFO] Display Name: (あなたの LINE 表示名)`
 - [ ] `[SUCCESS] ═══════════════════════════════`
@@ -455,7 +461,9 @@ liff.init() was called with a current URL that is not related to the endpoint UR
 |--------|------|---------|------|-----|
 | `GAS_BASE_URL` | GAS Web App の URL | Cloudflare Pages 環境変数 | ✅ | `https://script.google.com/macros/s/ABC.../exec` |
 | `GAS_API_KEY` | API 認証キー | Cloudflare Pages 環境変数 & GAS スクリプトプロパティ | ✅ | `your-random-secret-key` |
-| LIFF ID | LINE LIFF アプリ ID | URL パラメータ（`?liffId=...`） | ✅ | `1234567890-abcdefgh` |
+| `LIFF_ID` | LINE LIFF アプリ ID | Cloudflare Pages 環境変数 | ✅ | `1234567890-abcdefgh` |
+| `LINE_LOGIN_CHANNEL_ID` | LINE チャネル ID | Cloudflare Pages 環境変数 | ✅ | `2007654321` |
+| LIFF ID override | LIFF アプリ ID の上書き | URL パラメータ（`?liffId=...`） | 任意 | `1234567890-abcdefgh` |
 
 ---
 
