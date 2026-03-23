@@ -3,409 +3,931 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LIFF - 読み聞かせプランナー</title>
+  <title>読み聞かせプランナー</title>
   <style>
+    :root {
+      --bg-top: #fff6df;
+      --bg-bottom: #f2f8ff;
+      --surface: rgba(255, 255, 255, 0.9);
+      --surface-strong: #ffffff;
+      --border: rgba(15, 23, 42, 0.08);
+      --text-main: #1f2937;
+      --text-sub: #526071;
+      --accent: #d85b2f;
+      --accent-deep: #9f3d1d;
+      --accent-soft: rgba(216, 91, 47, 0.12);
+      --ok-bg: #ecfdf3;
+      --ok-text: #166534;
+      --error-bg: #fef2f2;
+      --error-text: #b91c1c;
+      --warn-bg: #fffbeb;
+      --warn-text: #b45309;
+      --shadow: 0 18px 50px rgba(31, 41, 55, 0.12);
+      --radius-xl: 28px;
+      --radius-lg: 20px;
+      --radius-md: 14px;
+    }
+
     * {
-      margin: 0;
-      padding: 0;
       box-sizing: border-box;
     }
-    
+
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-      background-color: #f5f5f5;
-      color: #333;
-      padding: 16px;
-      line-height: 1.6;
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Hiragino Sans", "Noto Sans JP", "Yu Gothic", sans-serif;
+      color: var(--text-main);
+      background:
+        radial-gradient(circle at top left, rgba(216, 91, 47, 0.18), transparent 32%),
+        radial-gradient(circle at right 20%, rgba(63, 131, 248, 0.14), transparent 28%),
+        linear-gradient(180deg, var(--bg-top), var(--bg-bottom));
+      padding: 24px 16px 48px;
     }
-    
-    .container {
-      max-width: 600px;
+
+    .page {
+      max-width: 760px;
       margin: 0 auto;
-      background: white;
-      border-radius: 8px;
-      padding: 24px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      display: grid;
+      gap: 18px;
     }
-    
+
+    .hero,
+    .card {
+      background: var(--surface);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow);
+    }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      padding: 28px 24px;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: auto -40px -60px auto;
+      width: 180px;
+      height: 180px;
+      background: radial-gradient(circle, rgba(216, 91, 47, 0.18), transparent 70%);
+      transform: rotate(12deg);
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent-deep);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+
     h1 {
-      font-size: 24px;
-      margin-bottom: 16px;
-      color: #06c755;
+      margin: 18px 0 10px;
+      font-size: clamp(30px, 7vw, 42px);
+      line-height: 1.1;
     }
-    
+
+    .hero p {
+      margin: 0;
+      color: var(--text-sub);
+      font-size: 15px;
+      line-height: 1.8;
+      max-width: 44rem;
+    }
+
+    .card {
+      padding: 22px;
+    }
+
+    .card h2 {
+      margin: 0 0 14px;
+      font-size: 20px;
+    }
+
     .status {
-      padding: 12px;
-      background-color: #e8f5e9;
-      border-left: 4px solid #4caf50;
-      border-radius: 4px;
-      margin-bottom: 24px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 16px 18px;
+      border-radius: var(--radius-lg);
+      border: 1px solid transparent;
+      transition: all 180ms ease;
     }
-    
+
     .status.loading {
-      background-color: #fff3e0;
-      border-left-color: #ff9800;
+      background: var(--warn-bg);
+      color: var(--warn-text);
+      border-color: rgba(180, 83, 9, 0.14);
     }
-    
+
+    .status.success {
+      background: var(--ok-bg);
+      color: var(--ok-text);
+      border-color: rgba(22, 101, 52, 0.16);
+    }
+
     .status.error {
-      background-color: #ffebee;
-      border-left-color: #f44336;
+      background: var(--error-bg);
+      color: var(--error-text);
+      border-color: rgba(185, 28, 28, 0.14);
     }
-    
-    .info-section {
-      margin-bottom: 24px;
+
+    .split {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .metric {
       padding: 16px;
-      background-color: #f9f9f9;
-      border-radius: 4px;
+      border-radius: var(--radius-md);
+      background: var(--surface-strong);
+      border: 1px solid var(--border);
     }
-    
-    .info-section h2 {
-      font-size: 18px;
-      margin-bottom: 12px;
-      color: #555;
-    }
-    
-    .info-section p {
+
+    .metric .label {
+      display: block;
       margin-bottom: 8px;
-      color: #666;
-      word-break: break-all;
+      color: var(--text-sub);
+      font-size: 12px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
     }
-    
-    .footer {
-      margin-top: 32px;
-      padding-top: 16px;
-      border-top: 1px solid #e0e0e0;
-      text-align: center;
-      color: #999;
+
+    .metric .value {
+      font-size: 15px;
+      word-break: break-word;
+    }
+
+    form {
+      display: grid;
+      gap: 16px;
+    }
+
+    .field {
+      display: grid;
+      gap: 8px;
+    }
+
+    .field label {
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    input,
+    select,
+    textarea,
+    button {
+      font: inherit;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      border: 1px solid rgba(31, 41, 55, 0.12);
+      border-radius: 14px;
+      padding: 14px 15px;
+      background: #fff;
+      color: var(--text-main);
+      transition: border-color 160ms ease, box-shadow 160ms ease;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      outline: none;
+      border-color: rgba(216, 91, 47, 0.6);
+      box-shadow: 0 0 0 4px rgba(216, 91, 47, 0.14);
+    }
+
+    button {
+      appearance: none;
+      border: 0;
+      border-radius: 999px;
+      padding: 14px 18px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 140ms ease, box-shadow 140ms ease, opacity 140ms ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 20px rgba(31, 41, 55, 0.1);
+    }
+
+    button:disabled {
+      opacity: 0.56;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .primary-button {
+      color: #fff;
+      background: linear-gradient(135deg, var(--accent), #ef7b42);
+    }
+
+    .survey-intro {
+      margin-bottom: 18px;
+      color: var(--text-sub);
+      line-height: 1.8;
+      white-space: pre-wrap;
+    }
+
+    .date-list {
+      display: grid;
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+
+    .date-card {
+      padding: 18px;
+      background: var(--surface-strong);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      transform-origin: center top;
+      animation: rise 320ms ease both;
+    }
+
+    .date-card h3 {
+      margin: 0 0 6px;
+      font-size: 18px;
+    }
+
+    .date-meta {
+      margin: 0 0 14px;
+      color: var(--text-sub);
       font-size: 14px;
     }
-    
-    .log-entry {
-      font-family: 'Courier New', monospace;
-      font-size: 12px;
-      padding: 4px 0;
-      border-bottom: 1px solid #eee;
+
+    .answer-group {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
     }
-    
-    .log-entry:last-child {
-      border-bottom: none;
+
+    .answer-option {
+      position: relative;
     }
-    
-    .log-timestamp {
-      color: #999;
-      margin-right: 8px;
+
+    .answer-option input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
     }
-    
-    .log-level {
-      font-weight: bold;
-      margin-right: 8px;
+
+    .answer-option span {
+      display: block;
+      padding: 13px 10px;
+      border-radius: 14px;
+      text-align: center;
+      border: 1px solid rgba(31, 41, 55, 0.1);
+      background: #fff;
+      font-weight: 700;
     }
-    
-    .log-level.info {
-      color: #2196f3;
+
+    .answer-option input:checked + span {
+      border-color: rgba(216, 91, 47, 0.7);
+      background: rgba(216, 91, 47, 0.08);
+      color: var(--accent-deep);
+      box-shadow: inset 0 0 0 1px rgba(216, 91, 47, 0.12);
     }
-    
-    .log-level.success {
-      color: #4caf50;
+
+    .helper {
+      margin: 8px 0 0;
+      color: var(--text-sub);
+      font-size: 13px;
     }
-    
-    .log-level.error {
-      color: #f44336;
+
+    .hidden {
+      display: none;
     }
-    
-    .log-level.warn {
-      color: #ff9800;
+
+    .log-list {
+      max-height: 220px;
+      overflow: auto;
+      display: grid;
+      gap: 8px;
+      padding-right: 4px;
+    }
+
+    .log-item {
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.84);
+      border: 1px solid rgba(31, 41, 55, 0.08);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .footer-note {
+      color: var(--text-sub);
+      font-size: 13px;
+      text-align: center;
+    }
+
+    @keyframes rise {
+      from {
+        opacity: 0;
+        transform: translateY(12px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @media (max-width: 720px) {
+      .split,
+      .answer-group {
+        grid-template-columns: 1fr;
+      }
+
+      .hero,
+      .card {
+        border-radius: 22px;
+      }
     }
   </style>
-  <!-- LIFF SDK (CDN edge) -->
   <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 </head>
 <body>
-  <div class="container">
-    <h1>📚 LIFF - 読み聞かせプランナー</h1>
-    
-    <div id="status" class="status loading">
-      初期化中...
-    </div>
-    
-    <div class="info-section">
-      <h2>ℹ️ このページについて</h2>
-      <p>Cloudflare Pages で配信される静的 LIFF アプリケーションです。</p>
-      <p><strong>目的:</strong> liff.init() と liff.getProfile() が正常に動作することを確認</p>
-      <p><strong>今後の実装方針:</strong> API呼び出しは同一オリジンの /api/* に寄せる予定（現時点では未実装）</p>
-    </div>
-    
-    <div id="debug-section" class="info-section">
-      <h2>🔍 デバッグログ</h2>
-      <div id="debug-logs"></div>
-    </div>
-    
-    <div class="footer">
-      <p>yomikikase-planner Cloudflare Pages</p>
-      <p>Powered by LIFF SDK</p>
-    </div>
-  </div>
+  <main class="page">
+    <section class="hero">
+      <div class="eyebrow">Milestone 3 MVP</div>
+      <h1>読み聞かせアンケート</h1>
+      <p>LINE でログインした保護者が、最新アンケートの候補日に対して参加可否を回答できる画面です。初回アクセス時はプロフィール登録が必要です。</p>
+    </section>
+
+    <section class="card">
+      <div id="status" class="status loading">初期化しています...</div>
+    </section>
+
+    <section id="modeCard" class="card hidden">
+      <h2>動作モード</h2>
+      <div class="split">
+        <div class="metric">
+          <span class="label">現在のモード</span>
+          <span id="modeValue" class="value"></span>
+        </div>
+        <div class="metric">
+          <span class="label">確認対象</span>
+          <span id="modeDescription" class="value"></span>
+        </div>
+      </div>
+      <p id="modeHelper" class="helper"></p>
+    </section>
+
+    <section id="profileCard" class="card hidden">
+      <h2>利用者情報</h2>
+      <div class="split">
+        <div class="metric">
+          <span class="label">LINE 表示名</span>
+          <span id="displayNameValue" class="value"></span>
+        </div>
+        <div class="metric">
+          <span class="label">LINE User ID</span>
+          <span id="lineUserIdValue" class="value"></span>
+        </div>
+      </div>
+      <p id="profileSummary" class="helper"></p>
+    </section>
+
+    <section id="registrationCard" class="card hidden">
+      <h2>初回プロフィール登録</h2>
+      <form id="registrationForm">
+        <div class="field">
+          <label for="childName">お子さまのお名前</label>
+          <input id="childName" name="childName" type="text" autocomplete="name" required>
+        </div>
+        <div class="split">
+          <div class="field">
+            <label for="grade">学年</label>
+            <select id="grade" name="grade" required>
+              <option value="">選択してください</option>
+              <option value="年少">年少</option>
+              <option value="年中">年中</option>
+              <option value="年長">年長</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="class">クラス</label>
+            <input id="class" name="class" type="text" placeholder="例: さくら組" required>
+          </div>
+        </div>
+        <button id="registrationSubmit" class="primary-button" type="submit">プロフィールを保存</button>
+      </form>
+    </section>
+
+    <section id="surveyCard" class="card hidden">
+      <h2 id="surveyTitle">最新アンケート</h2>
+      <p id="surveyDescription" class="survey-intro"></p>
+      <form id="surveyForm">
+        <div id="dateList" class="date-list"></div>
+        <button id="surveySubmit" class="primary-button" type="submit">回答を送信</button>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2>実行ログ</h2>
+      <div id="logList" class="log-list"></div>
+    </section>
+
+    <section id="previewResultCard" class="card hidden">
+      <h2>プレビュー送信結果</h2>
+      <p class="helper">このモードでは送信内容を画面上に表示するだけで、実際の保存は行いません。</p>
+      <pre id="previewPayload" class="log-item"></pre>
+    </section>
+
+    <p class="footer-note">API は Cloudflare Functions 経由で Google Apps Script に中継されます。</p>
+  </main>
 
   <script>
-    // 定数定義
-    const LOGIN_REDIRECT_DELAY_MS = 2000; // ユーザーがメッセージを読む時間を確保
-    const LIFF_ID_PATTERN = /^\d{10}-[a-zA-Z0-9]{8,}$/; // LIFF ID の形式: 10桁の数字 - 8文字以上の英数字
-    const ALLOWED_LOG_LEVELS = ['info', 'success', 'error', 'warn']; // log() 関数で許可されるレベル
-    const ALLOWED_STATUS_TYPES = ['loading', 'error', 'success']; // updateStatus() 関数で許可されるタイプ
-    
-    // ログ出力用の関数
-    function log(level, message) {
-      // level パラメータのバリデーション（CSS class injection 防止）
-      const safeLevel = ALLOWED_LOG_LEVELS.includes(level) ? level : 'info';
-      
-      const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
-      const logContainer = document.getElementById('debug-logs');
-      const entry = document.createElement('div');
-      entry.className = 'log-entry';
-      entry.innerHTML = `<span class="log-timestamp">${timestamp}</span><span class="log-level ${safeLevel}">[${safeLevel.toUpperCase()}]</span>${escapeHtml(message)}`;
-      logContainer.appendChild(entry);
-      
-      // コンソールにも出力
-      console.log(`[${safeLevel.toUpperCase()}] ${message}`);
-      
-      // 最新のログが見えるようにスクロール
-      entry.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    const state = {
+      config: null,
+      isPreview: false,
+      liffId: '',
+      idToken: '',
+      profile: null,
+      user: null,
+      survey: null,
+      dates: []
+    };
+
+    function appendLog(message) {
+      const logList = document.getElementById('logList');
+      const item = document.createElement('div');
+      const timestamp = new Date().toLocaleTimeString('ja-JP', { hour12: false });
+      item.className = 'log-item';
+      item.textContent = '[' + timestamp + '] ' + message;
+      logList.prepend(item);
     }
-    
-    function logInfo(message) {
-      log('info', message);
+
+    function updateStatus(message, type) {
+      const status = document.getElementById('status');
+      status.textContent = message;
+      status.className = 'status ' + type;
+      appendLog(message);
     }
-    
-    function logSuccess(message) {
-      log('success', message);
+
+    function showSection(id, visible) {
+      document.getElementById(id).classList.toggle('hidden', !visible);
     }
-    
-    function logError(message) {
-      log('error', message);
+
+    function isPreviewModeRequested() {
+      const preview = new URLSearchParams(window.location.search).get('preview');
+      return preview === '1' || preview === 'true';
     }
-    
-    function logWarn(message) {
-      log('warn', message);
+
+    function getLiffIdFromUrl() {
+      return new URLSearchParams(window.location.search).get('liffId') || '';
     }
-    
-    // HTML エスケープ関数
-    function escapeHtml(text) {
-      if (text === null || text === undefined) {
+
+    function getSurveyEndpoint() {
+      return '/api/survey';
+    }
+
+    function buildPreviewProfile() {
+      return {
+        displayName: 'プレビュー利用者',
+        userId: 'preview-user'
+      };
+    }
+
+    function buildPreviewUser() {
+      return {
+        childName: 'プレビュー園児',
+        grade: '年中',
+        class: 'さくら組'
+      };
+    }
+
+    function renderMode() {
+      const modeValue = document.getElementById('modeValue');
+      const modeDescription = document.getElementById('modeDescription');
+      const modeHelper = document.getElementById('modeHelper');
+
+      if (state.isPreview) {
+        modeValue.textContent = 'プレビュー';
+        modeDescription.textContent = '実データの表示と入力導線の確認';
+        modeHelper.textContent = 'LIFF 初期化と LINE ログインをスキップし、アンケート表示と入力検証だけを確認します。';
+      } else {
+        modeValue.textContent = 'LIFF 本番導線';
+        modeDescription.textContent = 'LINE ログインを含む本番フロー';
+        modeHelper.textContent = 'プロフィール取得と回答保存には LIFF の ID トークンを利用します。';
+      }
+
+      showSection('modeCard', true);
+    }
+
+    function getSampleSurveyData() {
+      return {
+        survey: {
+          surveyId: 'preview_survey_001',
+          title: 'プレビュー用 読み聞かせ参加希望調査',
+          description: 'この画面は LIFF を使わずに表示確認するためのプレビューです。候補日の選択、送信導線、表示崩れの確認に使えます。'
+        },
+        dates: [
+          {
+            surveyDateId: 'preview_date_001',
+            dateTime: '2026-04-10 10:00:00',
+            targetGrade: '年少',
+            label: '4月10日(金) 10:00〜 年少',
+            sortOrder: 1,
+            notes: ''
+          },
+          {
+            surveyDateId: 'preview_date_002',
+            dateTime: '2026-04-11 10:00:00',
+            targetGrade: '年中',
+            label: '4月11日(土) 10:00〜 年中',
+            sortOrder: 2,
+            notes: ''
+          },
+          {
+            surveyDateId: 'preview_date_003',
+            dateTime: '2026-04-12 10:00:00',
+            targetGrade: '年長',
+            label: '4月12日(日) 10:00〜 年長',
+            sortOrder: 3,
+            notes: 'プレビュー用のサンプル候補日です'
+          }
+        ]
+      };
+    }
+
+    async function fetchConfig() {
+      const response = await fetch('/api/config');
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || '設定の取得に失敗しました');
+      }
+
+      return data;
+    }
+
+    async function apiRequest(path, options) {
+      const requestOptions = Object.assign({ method: 'GET' }, options || {});
+      const headers = Object.assign({}, requestOptions.headers || {});
+
+      if (requestOptions.body && !headers['Content-Type']) {
+        headers['Content-Type'] = 'application/json';
+      }
+
+      if (state.idToken) {
+        headers.Authorization = 'Bearer ' + state.idToken;
+      }
+
+      requestOptions.headers = headers;
+
+      const response = await fetch(path, requestOptions);
+      const data = await response.json();
+
+      if (!response.ok || data.ok === false) {
+        throw new Error(data.error || data.message || 'API request failed');
+      }
+
+      return data;
+    }
+
+    async function initializeLiff() {
+      state.isPreview = isPreviewModeRequested();
+
+      try {
+        state.config = await fetchConfig();
+      } catch (error) {
+        if (!state.isPreview) {
+          throw error;
+        }
+
+        state.config = {
+          liffId: '',
+          apiBaseUrl: window.location.origin + '/api',
+          environment: 'preview-local'
+        };
+        appendLog('プレビュー用のローカル設定を使用します: ' + error.message);
+      }
+
+      state.liffId = getLiffIdFromUrl() || state.config.liffId || '';
+
+      renderMode();
+
+      if (state.isPreview) {
+        state.profile = buildPreviewProfile();
+        state.user = buildPreviewUser();
+        return true;
+      }
+
+      if (!state.liffId) {
+        throw new Error('LIFF_ID が未設定です');
+      }
+
+      updateStatus('LIFF を初期化しています...', 'loading');
+      await liff.init({
+        liffId: state.liffId,
+        withLoginOnExternalBrowser: true
+      });
+
+      if (!liff.isLoggedIn()) {
+        updateStatus('LINE ログインに移動します...', 'loading');
+        liff.login();
+        return false;
+      }
+
+      state.idToken = liff.getIDToken() || '';
+
+      if (!state.idToken) {
+        throw new Error('ID トークンを取得できませんでした。LIFF の openid scope を確認してください');
+      }
+
+      state.profile = await liff.getProfile();
+      return true;
+    }
+
+    function renderProfile() {
+      document.getElementById('displayNameValue').textContent = state.profile.displayName || '(未設定)';
+      document.getElementById('lineUserIdValue').textContent = state.profile.userId;
+
+      if (state.isPreview) {
+        document.getElementById('profileSummary').textContent = 'プレビューモードです。ユーザー登録と保存処理は実行されません。';
+      } else if (state.user) {
+        document.getElementById('profileSummary').textContent =
+          state.user.childName + ' / ' + state.user.grade + ' / ' + state.user.class;
+      } else {
+        document.getElementById('profileSummary').textContent = '初回登録が必要です。';
+      }
+
+      showSection('profileCard', true);
+    }
+
+    async function loadCurrentUser() {
+      if (state.isPreview) {
+        return;
+      }
+
+      const result = await apiRequest('/api/users');
+      state.user = result.user;
+    }
+
+    async function registerCurrentUser(formData) {
+      if (state.isPreview) {
+        state.user = buildPreviewUser();
+        renderProfile();
+        showSection('registrationCard', false);
+        updateStatus('プレビュー利用者をセットしました。アンケートを読み込みます...', 'success');
+        return;
+      }
+
+      const payload = {
+        childName: formData.get('childName'),
+        grade: formData.get('grade'),
+        class: formData.get('class')
+      };
+      const result = await apiRequest('/api/users', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+
+      state.user = result.user;
+      renderProfile();
+      showSection('registrationCard', false);
+      updateStatus('プロフィールを保存しました。アンケートを読み込みます...', 'success');
+    }
+
+    async function loadSurvey() {
+      try {
+        const result = await apiRequest(getSurveyEndpoint(), { method: 'GET' });
+        state.survey = result.survey;
+        state.dates = result.dates || [];
+      } catch (error) {
+        if (!state.isPreview) {
+          throw error;
+        }
+
+        const sample = getSampleSurveyData();
+        state.survey = sample.survey;
+        state.dates = sample.dates;
+        appendLog('プレビュー用のサンプルアンケートを使用します: ' + error.message);
+      }
+    }
+
+    function renderPreviewPayload(payloads) {
+      const previewPayload = document.getElementById('previewPayload');
+      previewPayload.textContent = JSON.stringify(payloads, null, 2);
+      showSection('previewResultCard', true);
+    }
+
+    function renderSurvey() {
+      const surveyCard = document.getElementById('surveyCard');
+      const dateList = document.getElementById('dateList');
+
+      document.getElementById('surveyTitle').textContent = state.survey.title;
+      document.getElementById('surveyDescription').textContent = state.survey.description || '参加可能な候補日を選択してください。';
+      dateList.innerHTML = '';
+
+      if (!state.dates.length) {
+        const empty = document.createElement('p');
+        empty.className = 'helper';
+        empty.textContent = '現在、表示できる候補日がありません。';
+        dateList.appendChild(empty);
+      }
+
+      state.dates.forEach(function(date, index) {
+        const article = document.createElement('article');
+        article.className = 'date-card';
+        article.style.animationDelay = String(index * 60) + 'ms';
+
+        const title = document.createElement('h3');
+        title.textContent = date.label || formatDateLabel(date.dateTime, date.targetGrade);
+        article.appendChild(title);
+
+        const meta = document.createElement('p');
+        meta.className = 'date-meta';
+        meta.textContent = [date.targetGrade, toDisplayDate(date.dateTime)].filter(Boolean).join(' / ');
+        article.appendChild(meta);
+
+        const answerGroup = document.createElement('div');
+        answerGroup.className = 'answer-group';
+
+        ['可', '不可', '未定'].forEach(function(answer) {
+          const label = document.createElement('label');
+          label.className = 'answer-option';
+
+          const input = document.createElement('input');
+          input.type = 'radio';
+          input.name = 'answer-' + date.surveyDateId;
+          input.value = answer;
+          input.required = true;
+
+          const text = document.createElement('span');
+          text.textContent = answer;
+
+          label.appendChild(input);
+          label.appendChild(text);
+          answerGroup.appendChild(label);
+        });
+
+        article.appendChild(answerGroup);
+        dateList.appendChild(article);
+      });
+
+      surveyCard.classList.remove('hidden');
+    }
+
+    function toDisplayDate(dateTime) {
+      if (!dateTime) {
         return '';
       }
-      const str = String(text);
-      const div = document.createElement('div');
-      div.textContent = str;
-      return div.innerHTML;
-    }
-    
-    // ステータス更新関数
-    function updateStatus(text, type = 'loading') {
-      // type パラメータのバリデーション（CSS class injection 防止）
-      const safeType = ALLOWED_STATUS_TYPES.includes(type) ? type : 'loading';
-      
-      const statusEl = document.getElementById('status');
-      statusEl.textContent = text;
-      statusEl.className = `status ${safeType}`;
-    }
-    
-    // LIFF ID の取得（URL パラメータまたはデフォルト値）
-    function getLiffId() {
-      const urlParams = new URLSearchParams(window.location.search);
-      const liffId = urlParams.get('liffId');
-      
-      if (!liffId) {
-        logWarn('LIFF ID が URL パラメータに指定されていません');
-        logInfo('使用方法: ?liffId=YOUR_LIFF_ID を URL に追加してください');
-        return null;
+
+      const date = new Date(dateTime);
+
+      if (Number.isNaN(date.getTime())) {
+        return dateTime;
       }
-      
-      // LIFF ID の形式バリデーション
-      if (!LIFF_ID_PATTERN.test(liffId)) {
-        logError('無効な LIFF ID 形式です（正しい形式: 1234567890-abcdefgh）');
-        return null;
-      }
-      
-      return liffId;
-    }
-    
-    // メイン処理
-    async function main() {
-      try {
-        logInfo('ページ読み込み完了');
-        logInfo('LIFF SDK バージョン: ' + (liff.version || 'unknown'));
-        
-        // LIFF ID の取得
-        const liffId = getLiffId();
-        if (!liffId) {
-          updateStatus('❌ LIFF ID が未設定です', 'error');
-          logError('LIFF ID を URL パラメータで指定してください: ?liffId=YOUR_LIFF_ID');
-          return;
-        }
-        
-        logInfo('LIFF ID: ' + liffId.substring(0, 10) + '...');
-        
-        // 現在の URL を表示
-        logInfo('現在の URL: ' + window.location.href);
-        
-        // LIFF 初期化
-        updateStatus('LIFF を初期化中...', 'loading');
-        logInfo('liff.init() を呼び出し中...');
-        
-        await liff.init({
-          liffId: liffId,
-          withLoginOnExternalBrowser: true
-        });
-        
-        logSuccess('✅ liff.init() が成功しました');
-        
-        // 環境情報の取得
-        const isInClient = liff.isInClient();
-        const isLoggedIn = liff.isLoggedIn();
-        const os = liff.getOS();
-        const language = liff.getLanguage();
-        const version = liff.getVersion();
-        const lineVersion = liff.getLineVersion();
-        
-        logInfo('─────────────────────────────');
-        logInfo('📱 環境情報');
-        logInfo('─────────────────────────────');
-        logInfo('isInClient: ' + isInClient + (isInClient ? ' (LINEアプリ内)' : ' (外部ブラウザ)'));
-        logInfo('isLoggedIn: ' + isLoggedIn);
-        logInfo('OS: ' + os);
-        logInfo('Language: ' + language);
-        logInfo('LIFF Version: ' + version);
-        if (lineVersion) {
-          logInfo('LINE Version: ' + lineVersion);
-        }
-        
-        // コンテキスト情報
-        const context = liff.getContext();
-        if (context) {
-          logInfo('Context Type: ' + (context.type || 'unknown'));
-          logInfo('Context viewType: ' + (context.viewType || 'unknown'));
-        }
-        
-        // ログイン状態のチェック
-        if (!isLoggedIn) {
-          updateStatus('未ログイン - ログインページへリダイレクト', 'loading');
-          logWarn('未ログイン状態です');
-          logInfo(`${LOGIN_REDIRECT_DELAY_MS / 1000}秒後に liff.login() を実行します...`);
-          
-          setTimeout(() => {
-            logInfo('liff.login() を呼び出し中...');
-            liff.login();
-          }, LOGIN_REDIRECT_DELAY_MS);
-          return;
-        }
-        
-        // プロフィール情報の取得
-        logInfo('─────────────────────────────');
-        logInfo('👤 プロフィール取得');
-        logInfo('─────────────────────────────');
-        logInfo('liff.getProfile() を呼び出し中...');
-        
-        const profile = await liff.getProfile();
-        
-        logSuccess('✅ liff.getProfile() が成功しました');
-        logInfo('User ID: ' + profile.userId);
-        logInfo('Display Name: ' + (profile.displayName || '(未設定)'));
-        logInfo('Status Message: ' + (profile.statusMessage || '(未設定)'));
-        logInfo('Picture URL: ' + (profile.pictureUrl ? 'あり' : 'なし'));
-        
-        // プロフィール画像がある場合は表示
-        if (profile.pictureUrl) {
-          // URL の形式を検証（https で始まることを確認）
-          const isValidUrl = /^https:\/\/.+/.test(profile.pictureUrl);
-          if (isValidUrl) {
-            const debugSection = document.getElementById('debug-section');
-            const imgSection = document.createElement('div');
-            imgSection.style.marginTop = '16px';
-            imgSection.style.textAlign = 'center';
-            
-            const p = document.createElement('p');
-            p.style.marginBottom = '8px';
-            p.style.color = '#666';
-            p.textContent = 'プロフィール画像:';
-            
-            const img = document.createElement('img');
-            img.src = profile.pictureUrl;
-            img.alt = 'Profile';
-            img.style.width = '100px';
-            img.style.height = '100px';
-            img.style.borderRadius = '50%';
-            img.style.border = '2px solid #06c755';
-            
-            imgSection.appendChild(p);
-            imgSection.appendChild(img);
-            debugSection.appendChild(imgSection);
-          } else {
-            logWarn('プロフィール画像URLの形式が無効です');
-          }
-        }
-        
-        // デコードされた ID トークンの取得（optional）
-        try {
-          const idToken = liff.getDecodedIDToken();
-          if (idToken) {
-            logInfo('─────────────────────────────');
-            logInfo('🔐 ID Token 情報');
-            logInfo('─────────────────────────────');
-            logInfo('Name: ' + (idToken.name || 'N/A'));
-            logInfo('Email: ' + (idToken.email || 'N/A'));
-            logInfo('Sub: ' + idToken.sub);
-          }
-        } catch (e) {
-          logWarn('ID Token 取得をスキップ (取得できない環境)');
-        }
-        
-        // 成功ステータス
-        updateStatus('✅ すべての確認が完了しました', 'success');
-        logSuccess('═══════════════════════════════');
-        logSuccess('LIFF 検証完了！');
-        logSuccess('═══════════════════════════════');
-        
-        // 受け入れ条件の確認結果を表示
-        logInfo('');
-        logInfo('📋 受け入れ条件チェック:');
-        logInfo('✓ liff.isInClient() = ' + isInClient);
-        logInfo('✓ liff.init() が resolve した');
-        logInfo('✓ liff.getProfile() が成功した');
-        logInfo('✓ displayName: ' + (profile.displayName || '(未設定)'));
-        logInfo('✓ userId: ' + profile.userId);
-        
-        // 今後のAPI実装に関する情報
-        logInfo('');
-        logInfo('🔮 今後の実装予定:');
-        logInfo('API呼び出しは同一オリジンの /api/* エンドポイントを使用します');
-        logInfo('（例: /api/health, /api/reservations など）');
-        
-      } catch (error) {
-        updateStatus('❌ エラーが発生しました', 'error');
-        logError('エラー: ' + error.message);
-        logError('Stack: ' + (error.stack || 'N/A'));
-        console.error('LIFF Error:', error);
-        
-        // エラーの種類に応じたヘルプメッセージ
-        if (error.message.includes('endpoint')) {
-          logError('');
-          logError('💡 Endpoint URL の不一致エラーの可能性があります');
-          logError('LINE Developers Console で設定した Endpoint URL を確認してください');
-          logError('Endpoint URL はこのページの URL と一致する必要があります');
-        }
-      }
-    }
-    
-    // ページロード時に実行
-    if (typeof liff !== 'undefined') {
-      document.addEventListener('DOMContentLoaded', main);
-    } else {
-      document.addEventListener('DOMContentLoaded', function() {
-        updateStatus('❌ LIFF SDK が読み込まれていません', 'error');
-        logError('LIFF SDK の読み込みに失敗しました');
-        logError('ネットワーク接続を確認してください');
+
+      return date.toLocaleString('ja-JP', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        weekday: 'short',
+        hour: '2-digit',
+        minute: '2-digit'
       });
     }
+
+    function formatDateLabel(dateTime, targetGrade) {
+      return [toDisplayDate(dateTime), targetGrade].filter(Boolean).join(' / ');
+    }
+
+    async function submitResponses() {
+      const form = document.getElementById('surveyForm');
+      const submitButton = document.getElementById('surveySubmit');
+      const formData = new FormData(form);
+      const payloads = [];
+      let index;
+
+      for (index = 0; index < state.dates.length; index += 1) {
+        if (!formData.get('answer-' + state.dates[index].surveyDateId)) {
+          throw new Error('すべての候補日に回答してください');
+        }
+      }
+
+      submitButton.disabled = true;
+
+      try {
+        for (index = 0; index < state.dates.length; index += 1) {
+          payloads.push({
+            surveyId: state.survey.surveyId,
+            surveyDateId: state.dates[index].surveyDateId,
+            answer: formData.get('answer-' + state.dates[index].surveyDateId),
+            notes: ''
+          });
+        }
+
+        if (state.isPreview) {
+          renderPreviewPayload(payloads);
+          updateStatus('プレビュー送信を確認しました。実際の保存はしていません。', 'success');
+          return;
+        }
+
+        for (index = 0; index < payloads.length; index += 1) {
+          await apiRequest('/api/gas/responses', {
+            method: 'POST',
+            body: JSON.stringify(payloads[index])
+          });
+        }
+
+        updateStatus('回答を保存しました。ありがとうございました。', 'success');
+      } finally {
+        submitButton.disabled = false;
+      }
+    }
+
+    async function setupApplication() {
+      updateStatus('設定を確認しています...', 'loading');
+
+      const initialized = await initializeLiff();
+
+      if (!initialized) {
+        return;
+      }
+
+      updateStatus('プロフィールを確認しています...', 'loading');
+      await loadCurrentUser();
+      renderProfile();
+
+      if (state.isPreview) {
+        updateStatus('プレビューモードで最新アンケートを読み込んでいます...', 'loading');
+        await loadSurvey();
+        renderSurvey();
+        updateStatus('プレビューモードでアンケートを確認できます', 'success');
+        return;
+      }
+
+      if (!state.user) {
+        showSection('registrationCard', true);
+        updateStatus('初回プロフィール登録を入力してください', 'loading');
+        return;
+      }
+
+      updateStatus('最新アンケートを読み込んでいます...', 'loading');
+      await loadSurvey();
+      renderSurvey();
+      updateStatus('アンケートを回答してください', 'success');
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      const registrationForm = document.getElementById('registrationForm');
+      const surveyForm = document.getElementById('surveyForm');
+
+      registrationForm.addEventListener('submit', async function(event) {
+        event.preventDefault();
+        const submitButton = document.getElementById('registrationSubmit');
+        submitButton.disabled = true;
+
+        try {
+          await registerCurrentUser(new FormData(registrationForm));
+          await loadSurvey();
+          renderSurvey();
+          updateStatus('アンケートを回答してください', 'success');
+        } catch (error) {
+          updateStatus(error.message, 'error');
+        } finally {
+          submitButton.disabled = false;
+        }
+      });
+
+      surveyForm.addEventListener('submit', async function(event) {
+        event.preventDefault();
+
+        try {
+          updateStatus('回答を保存しています...', 'loading');
+          await submitResponses();
+        } catch (error) {
+          updateStatus(error.message, 'error');
+        }
+      });
+
+      if (typeof liff === 'undefined' && !isPreviewModeRequested()) {
+        updateStatus('LIFF SDK を読み込めませんでした', 'error');
+        return;
+      }
+
+      setupApplication().catch(function(error) {
+        updateStatus(error.message, 'error');
+      });
+    });
   </script>
 </body>
 </html>

@@ -49,6 +49,16 @@ https://miniapp.line.me/{LIFF_ID}?liffId={LIFF_ID}
 https://your-project.pages.dev/?liffId={LIFF_ID}
 ```
 
+### ブラウザから（LIFF なしプレビュー）
+
+```text
+https://your-project.pages.dev/?preview=1
+```
+
+- LIFF 初期化と LINE ログインをスキップします
+- `/api/survey` から最新アンケートを取得して表示します
+- 回答送信は画面上の擬似送信で確認し、実データ保存は行いません
+
 **注意**: `{LIFF_ID}` を実際の LIFF ID に置き換えてください。
 
 ## ✅ 受け入れ条件
