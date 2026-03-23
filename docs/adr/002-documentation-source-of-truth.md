@@ -13,7 +13,7 @@
 方針転換後、以下のような状態が発生していた。
 
 - `README.md`, `Milestone.md`, Sprint 完了報告、Cloudflare 移行レポートは現行構成を反映している
-- `ArchitectureDesign.md`, `RequirementSpecification.md`, `AGENT.md` には初期構想が多く残っている
+- `ArchitectureDesign.md`, `RequirementSpecification.md`, `AGENTS.md` には初期構想が多く残っている
 - 文書ごとに前提が異なるため、「何を現在の正とみなすか」が曖昧になっていた
 
 この状態では、将来の開発者やエージェントが古い文書を一次ソースと誤認し、誤った前提で実装やレビューを進めるリスクがある。
