@@ -130,6 +130,97 @@ GET /api/gas/health
 
 **セットアップ**: [Cloudflare Secrets 設定手順](../docs/cloudflare-secrets-setup.md) を参照
 
+### `/api/gas/surveys`
+
+アクティブなアンケート本体と候補日一覧を取得する GAS プロキシ。
+
+**ファイル**: `functions/api/gas/surveys.js`
+
+**リクエスト**:
+```bash
+GET /api/gas/surveys
+```
+
+**レスポンス（成功時）**:
+```json
+{
+  "ok": true,
+  "survey": {
+    "surveyId": "survey_001",
+    "title": "1月の読み聞かせ参加希望調査",
+    "status": "active"
+  },
+  "dates": [
+    {
+      "surveyDateId": "date_001",
+      "label": "1月15日(水) 10:00〜 年少",
+      "targetGrade": "年少"
+    }
+  ]
+}
+```
+
+### `/api/survey`
+
+ブラウザプレビューや簡易動作確認向けの公開アンケート取得エンドポイント。
+
+**ファイル**: `functions/api/survey.js`
+
+**リクエスト**:
+```bash
+GET /api/survey
+```
+
+**用途**:
+- LIFF 初期化なしで最新アンケート表示を確認したいとき
+- `/?preview=1` から実データを読み込みたいとき
+- 認証必須の `/api/users` や `/api/gas/responses` を触る前の疎通確認
+
+### `/api/users`
+
+LINE ID トークンを検証したうえで、現在のユーザー情報を取得・登録するエンドポイント。
+
+**ファイル**: `functions/api/users.js`
+
+**認証**:
+- `Authorization: Bearer <LIFF ID token>` が必須
+- Cloudflare から LINE verify API を呼び出して `sub` を検証
+
+**GET /api/users**:
+- 現在の `lineUserId` に対応する年度プロフィールを返す
+
+**POST /api/users**:
+```json
+{
+  "childName": "山田 太郎",
+  "grade": "年少",
+  "class": "さくら組"
+}
+```
+
+### `/api/gas/responses`
+
+LINE ID トークンを検証したうえで、回答を `Responses` シートへ保存する GAS プロキシ。
+
+**ファイル**: `functions/api/gas/responses.js`
+
+**認証**:
+- `Authorization: Bearer <LIFF ID token>` が必須
+
+**リクエスト**:
+```json
+{
+  "surveyId": "survey_001",
+  "surveyDateId": "date_001",
+  "answer": "可",
+  "notes": ""
+}
+```
+
+**保存ポリシー**:
+- 同一 `lineUserId + surveyDateId` の再送は既存行を更新する
+- `surveyDateId` が現在の `activeSurveyId` に属さない場合は拒否する
+
 ## 🔧 実装方法
 
 ### 基本構造
@@ -213,12 +304,16 @@ wrangler pages dev liff
 # http://localhost:8788/api/health
 ```
 
-## 📚 今後の実装予定
+## 🔐 認証に必要な環境変数
 
-- `/api/gas/surveys` - アンケート情報の取得（GAS プロキシ）
-- `/api/gas/responses` - アンケート回答の送信（GAS プロキシ）
-- `/api/users` - ユーザー情報管理
-- 認証・認可の実装（LIFF ID Token 検証など）
+| 変数名 | 説明 |
+|--------|------|
+| `GAS_BASE_URL` | GAS Web App の URL |
+| `GAS_API_KEY` | GAS との通信用 API キー |
+| `LIFF_ID` | LIFF 初期化に使う ID |
+| `LINE_LOGIN_CHANNEL_ID` | LINE ID トークン検証用のチャネル ID |
+
+`LINE_LOGIN_CHANNEL_ID` が未設定の場合、`/api/users` と `/api/gas/responses` は 500 エラーになります。
 
 ## 🔗 参考リンク
 

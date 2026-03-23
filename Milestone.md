@@ -68,13 +68,16 @@
 
 - [x] LIFF 起動、ログイン、`userId` / `displayName` の取得
 - [x] `health` / `config` 系の基盤 API を用意
-- [ ] `activeSurveyId` をもとに最新アンケートを取得する API を実装
-- [ ] LIFF 画面で候補日一覧を表示
-- [ ] 回答送信 API を実装し、`Responses` シートへ保存
-- [ ] 初回プロフィール登録と `Users` シート連携を実装
-- [ ] ID トークン検証を実装
+- [x] `activeSurveyId` をもとに最新アンケートを取得する API を実装
+- [x] LIFF 画面で候補日一覧を表示
+- [x] 回答送信 API を実装し、`Responses` シートへ保存
+- [x] 初回プロフィール登録と `Users` シート連携を実装
+- [x] ID トークン検証を実装
+- [x] LIFF なしで確認できる `?preview=1` プレビュー導線を実装
+- [ ] Cloudflare Pages 本番デプロイへ最新コードを反映し、`/api/survey` と `/?preview=1` を確認
+- [ ] 実データの Spreadsheet を使って、ユーザー登録と回答保存の本番検証を完了
 
-現状、`gas/Code.gs` の `saveResponse` は `Not implemented yet` のままです。
+コード上は `gas/Code.gs` の `getActiveSurvey`, `registerUser`, `saveResponse` と、Cloudflare Functions 側の ID トークン検証まで実装済みです。現時点の残課題は、本番デプロイへの反映確認と実環境データでの最終検証です。
 
 ---
 
