@@ -20,7 +20,6 @@ jobs:
       - name: Run TAKT
         uses: nrslib/takt-action@v1
         with:
-          provider: codex
-          openai_api_key: ${{ secrets.OPENAI_API_KEY }}
+          anthropic_api_key: ${{ secrets.TAKT_ANTHROPIC_API_KEY }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
           piece: default
