@@ -167,6 +167,14 @@ function doGet(e) {
         return handleGetActiveSurvey();
       }
 
+      if (action === 'listSurveys') {
+        return handleListSurveys();
+      }
+
+      if (action === 'getResponses') {
+        return handleGetResponses(e);
+      }
+
       if (action === 'getUser') {
         return handleGetUser(e);
       }
@@ -213,6 +221,10 @@ function doPost(e) {
 
     if (action === 'registerUser') {
       return handleRegisterUser(requestBody);
+    }
+
+    if (action === 'switchActiveSurvey') {
+      return handleSwitchActiveSurvey(requestBody);
     }
     
     return createJsonError('Unknown action');
@@ -300,6 +312,84 @@ function handleGetUser(e) {
   return createJsonResponse({
     ok: true,
     user: user
+  });
+}
+
+/**
+ * アンケート一覧を取得
+ *
+ * @returns {ContentService} JSON レスポンス
+ */
+function handleListSurveys() {
+  var surveys = getSheetRecords('Surveys');
+  var activeSurveyId = getConfigValue('activeSurveyId');
+  var sanitized = [];
+  var index;
+
+  for (index = 0; index < surveys.length; index += 1) {
+    sanitized.push(sanitizeSurveyRecord(surveys[index]));
+  }
+
+  return createJsonResponse({
+    ok: true,
+    surveys: sanitized,
+    activeSurveyId: activeSurveyId
+  });
+}
+
+/**
+ * 回答一覧を取得（surveyId でフィルタ可能）
+ *
+ * @param {Object} e - doGet のイベントオブジェクト
+ * @returns {ContentService} JSON レスポンス
+ */
+function handleGetResponses(e) {
+  var surveyId = getOptionalString(e.parameter.surveyId);
+  var responses = getSheetRecords('Responses');
+  var filtered = [];
+  var index;
+
+  for (index = 0; index < responses.length; index += 1) {
+    if (!surveyId || String(responses[index].surveyId) === surveyId) {
+      filtered.push(sanitizeResponseRecord(responses[index]));
+    }
+  }
+
+  return createJsonResponse({
+    ok: true,
+    responses: filtered
+  });
+}
+
+/**
+ * アクティブなアンケートを切り替え
+ *
+ * @param {Object} payload - { surveyId: string }
+ * @returns {ContentService} JSON レスポンス
+ */
+function handleSwitchActiveSurvey(payload) {
+  var surveyId = getRequiredString(payload.surveyId, 'surveyId');
+  var surveys = getSheetRecords('Surveys');
+  var survey = findRecordByField(surveys, 'surveyId', surveyId);
+
+  if (!survey) {
+    throw new Error('Survey not found: ' + surveyId);
+  }
+
+  if (String(survey.status || '') !== 'active') {
+    throw new Error('Survey is not active: ' + surveyId + ' (status: ' + (survey.status || 'unknown') + ')');
+  }
+
+  setConfigValue('activeSurveyId', surveyId);
+
+  logToSheet('INFO', 'handleSwitchActiveSurvey', 'アクティブなアンケートを切り替えました', {
+    surveyId: surveyId,
+    title: survey.title
+  });
+
+  return createJsonResponse({
+    ok: true,
+    activeSurveyId: surveyId
   });
 }
 
@@ -459,6 +549,20 @@ function getConfigValue(key) {
   }
 
   return String(configRecord.value || '');
+}
+
+function setConfigValue(key, value) {
+  return withLock(function() {
+    var sheet = getSheetOrThrow('Config');
+    var records = getSheetRecords('Config');
+    var existing = findRecordByField(records, 'key', key);
+
+    if (existing) {
+      sheet.getRange(existing._rowNumber, 2).setValue(value);
+    } else {
+      sheet.appendRow([key, value]);
+    }
+  });
 }
 
 function getActiveSurveyBundle() {
