@@ -199,6 +199,10 @@ function doGet(e) {
         return handleGetBookHistory(e);
       }
 
+      if (action === 'exportFiscalYearData') {
+        return handleExportFiscalYearData(e);
+      }
+
       return createJsonError('Unknown action');
     }
     
@@ -265,6 +269,10 @@ function doPost(e) {
 
     if (action === 'registerReadingRecord') {
       return handleRegisterReadingRecord(requestBody);
+    }
+
+    if (action === 'deleteFiscalYearData') {
+      return handleDeleteFiscalYearData(requestBody);
     }
     
     return createJsonError('Unknown action');
@@ -949,6 +957,209 @@ function handleGetBookHistory(e) {
     book: sanitizeBookRecord(book),
     records: history
   });
+}
+
+// ========================================
+// Data Lifecycle Handlers
+// ========================================
+
+/**
+ * 年度データをエクスポート（削除前のバックアップ用）
+ *
+ * @param {Object} e - doGet のイベントオブジェクト
+ * @returns {ContentService} JSON レスポンス
+ */
+function handleExportFiscalYearData(e) {
+  var fiscalYear = getRequiredString(e.parameter.fiscalYear, 'fiscalYear');
+
+  // 整合性のあるスナップショットを取得するためロック内で全シートを読み出す
+  var snapshot = withLock(function() {
+    var surveys = filterByFiscalYear(getSheetRecords('Surveys'), fiscalYear);
+    var surveyIds = pluckField(surveys, 'surveyId');
+    var surveyDates = filterByForeignKeys(getSheetRecords('SurveyDates'), 'surveyId', surveyIds);
+    var responses = filterByForeignKeys(getSheetRecords('Responses'), 'surveyId', surveyIds);
+    var users = filterByFiscalYear(getSheetRecords('Users'), fiscalYear);
+    var events = filterByFiscalYear(getSheetRecords('ConfirmedEvents'), fiscalYear);
+    var eventIds = pluckField(events, 'eventId');
+    var participants = filterByForeignKeys(getSheetRecords('EventParticipants'), 'eventId', eventIds);
+    var readingRecords = filterByFiscalYear(getSheetRecords('ReadingRecords'), fiscalYear);
+
+    return {
+      surveys: surveys.map(sanitizeSurveyRecord),
+      surveyDates: surveyDates.map(sanitizeSurveyDateRecord),
+      responses: responses.map(sanitizeResponseRecord),
+      users: users.map(sanitizeUserRecord),
+      confirmedEvents: events.map(sanitizeConfirmedEventRecord),
+      eventParticipants: participants.map(sanitizeEventParticipantRecord),
+      readingRecords: readingRecords.map(sanitizeReadingRecordRecord)
+    };
+  });
+
+  return createJsonResponse({
+    ok: true,
+    fiscalYear: fiscalYear,
+    exportedAt: new Date().toISOString(),
+    data: snapshot
+  });
+}
+
+/**
+ * 年度データを削除
+ * 対象: Surveys, SurveyDates, Responses, Users, ConfirmedEvents, EventParticipants, ReadingRecords
+ * 絵本マスタ（Books）は年度に紐付かないため削除しない
+ *
+ * @param {Object} payload - { fiscalYear, confirm: true }
+ * @returns {ContentService} JSON レスポンス
+ */
+function handleDeleteFiscalYearData(payload) {
+  var fiscalYear = getRequiredString(payload.fiscalYear, 'fiscalYear');
+
+  // 慎重なオペレーションのため、明示的な confirm フラグを要求
+  if (payload.confirm !== true) {
+    return createJsonError('confirm must be true to delete fiscal year data');
+  }
+
+  // アクティブアンケート検証と削除を同一ロック内で実行（TOCTOU 防止）
+  var result = withLock(function() {
+    // アクティブなアンケートが対象年度に含まれていないか確認
+    var activeSurveyId = getConfigValue('activeSurveyId');
+    if (activeSurveyId) {
+      var allSurveysForCheck = getSheetRecords('Surveys');
+      var activeSurvey = findRecordByField(allSurveysForCheck, 'surveyId', activeSurveyId);
+      if (activeSurvey && String(activeSurvey.fiscalYear) === fiscalYear) {
+        return { error: 'Cannot delete data for the fiscal year that contains the active survey. Switch activeSurveyId first.' };
+      }
+    }
+
+    var counts = {};
+
+    // 先に対象の surveyId / eventId を取得（子テーブル削除用）
+    var allSurveys = getSheetRecords('Surveys');
+    var targetSurveyIds = {};
+    var i;
+    for (i = 0; i < allSurveys.length; i += 1) {
+      if (String(allSurveys[i].fiscalYear) === fiscalYear) {
+        targetSurveyIds[String(allSurveys[i].surveyId)] = true;
+      }
+    }
+
+    var allEvents = getSheetRecords('ConfirmedEvents');
+    var targetEventIds = {};
+    for (i = 0; i < allEvents.length; i += 1) {
+      if (String(allEvents[i].fiscalYear) === fiscalYear) {
+        targetEventIds[String(allEvents[i].eventId)] = true;
+      }
+    }
+
+    // 子テーブルから先に削除（行番号が変わるため逆順削除）
+    counts.eventParticipants = deleteRowsByForeignKeys('EventParticipants', 'eventId', targetEventIds);
+    counts.responses = deleteRowsByForeignKeys('Responses', 'surveyId', targetSurveyIds);
+    counts.surveyDates = deleteRowsByForeignKeys('SurveyDates', 'surveyId', targetSurveyIds);
+
+    // 親テーブルを削除
+    counts.readingRecords = deleteRowsByFiscalYear('ReadingRecords', fiscalYear);
+    counts.confirmedEvents = deleteRowsByFiscalYear('ConfirmedEvents', fiscalYear);
+    counts.users = deleteRowsByFiscalYear('Users', fiscalYear);
+    counts.surveys = deleteRowsByFiscalYear('Surveys', fiscalYear);
+
+    return { counts: counts };
+  });
+
+  if (result.error) {
+    return createJsonError(result.error);
+  }
+
+  var deletedCounts = result.counts;
+
+  logToSheet('WARN', 'handleDeleteFiscalYearData', '年度データを削除しました', {
+    fiscalYear: fiscalYear,
+    deletedCounts: deletedCounts
+  });
+
+  return createJsonResponse({
+    ok: true,
+    fiscalYear: fiscalYear,
+    deletedCounts: deletedCounts
+  });
+}
+
+// ========================================
+// Data Lifecycle Helpers
+// ========================================
+
+function filterByFiscalYear(records, fiscalYear) {
+  var filtered = [];
+  var i;
+  for (i = 0; i < records.length; i += 1) {
+    if (String(records[i].fiscalYear) === fiscalYear) {
+      filtered.push(records[i]);
+    }
+  }
+  return filtered;
+}
+
+function filterByForeignKeys(records, fieldName, ids) {
+  var filtered = [];
+  var idSet = {};
+  var i;
+  for (i = 0; i < ids.length; i += 1) {
+    idSet[String(ids[i])] = true;
+  }
+  for (i = 0; i < records.length; i += 1) {
+    if (idSet[String(records[i][fieldName])]) {
+      filtered.push(records[i]);
+    }
+  }
+  return filtered;
+}
+
+function pluckField(records, fieldName) {
+  var result = [];
+  var i;
+  for (i = 0; i < records.length; i += 1) {
+    result.push(String(records[i][fieldName] || ''));
+  }
+  return result;
+}
+
+function deleteRowsByFiscalYear(sheetName, fiscalYear) {
+  var sheet = getSpreadsheet().getSheetByName(sheetName);
+  if (!sheet) {
+    return 0;
+  }
+  var records = getSheetRecords(sheetName);
+  var rowsToDelete = [];
+  var i;
+  for (i = 0; i < records.length; i += 1) {
+    if (String(records[i].fiscalYear) === fiscalYear) {
+      rowsToDelete.push(records[i]._rowNumber);
+    }
+  }
+  // 逆順で削除（行番号ズレ防止）
+  for (i = rowsToDelete.length - 1; i >= 0; i -= 1) {
+    sheet.deleteRow(rowsToDelete[i]);
+  }
+  return rowsToDelete.length;
+}
+
+function deleteRowsByForeignKeys(sheetName, fieldName, idSet) {
+  var sheet = getSpreadsheet().getSheetByName(sheetName);
+  if (!sheet) {
+    return 0;
+  }
+  var records = getSheetRecords(sheetName);
+  var rowsToDelete = [];
+  var i;
+  for (i = 0; i < records.length; i += 1) {
+    if (idSet[String(records[i][fieldName])]) {
+      rowsToDelete.push(records[i]._rowNumber);
+    }
+  }
+  // 逆順で削除（行番号ズレ防止）
+  for (i = rowsToDelete.length - 1; i >= 0; i -= 1) {
+    sheet.deleteRow(rowsToDelete[i]);
+  }
+  return rowsToDelete.length;
 }
 
 // ========================================
