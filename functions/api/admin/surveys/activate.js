@@ -1,7 +1,14 @@
 import { jsonResponse, corsPreflightResponse } from '../../../_shared/headers.js';
 import { callGas, createGasConfigErrorResponse } from '../../../_shared/gas.js';
+import { verifyAdminAuth } from '../../../_shared/admin-auth.js';
 
 export async function onRequestPost({ request, env }) {
+  const authResult = verifyAdminAuth(request, env);
+
+  if (!authResult.ok) {
+    return authResult.response;
+  }
+
   let body;
 
   try {
@@ -16,7 +23,7 @@ export async function onRequestPost({ request, env }) {
     );
   }
 
-  if (!body.surveyId) {
+  if (!body || typeof body !== 'object' || Array.isArray(body) || !body.surveyId) {
     return jsonResponse(
       {
         ok: false,

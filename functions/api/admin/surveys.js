@@ -1,7 +1,14 @@
 import { jsonResponse, corsPreflightResponse } from '../../_shared/headers.js';
 import { callGas, createGasConfigErrorResponse } from '../../_shared/gas.js';
+import { verifyAdminAuth } from '../../_shared/admin-auth.js';
 
-export async function onRequestGet({ env }) {
+export async function onRequestGet({ request, env }) {
+  const authResult = verifyAdminAuth(request, env);
+
+  if (!authResult.ok) {
+    return authResult.response;
+  }
+
   try {
     const gasResult = await callGas({
       env,

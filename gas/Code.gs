@@ -376,6 +376,10 @@ function handleSwitchActiveSurvey(payload) {
     throw new Error('Survey not found: ' + surveyId);
   }
 
+  if (String(survey.status || '') !== 'active') {
+    throw new Error('Survey is not active: ' + surveyId + ' (status: ' + (survey.status || 'unknown') + ')');
+  }
+
   setConfigValue('activeSurveyId', surveyId);
 
   logToSheet('INFO', 'handleSwitchActiveSurvey', 'アクティブなアンケートを切り替えました', {
