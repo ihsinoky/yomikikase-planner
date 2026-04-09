@@ -1,0 +1,3 @@
+eventId,surveyId,surveyDateId,fiscalYear,eventDate,targetGrade,className,confirmedAt,notes
+evt_001,survey_001,date_001,2025,2025-01-15 10:00:00,年少,,2025-01-10 09:00:00,
+evt_002,survey_001,date_002,2025,2025-01-16 10:00:00,年中,,2025-01-10 09:00:00,園庭使用予定のため室内
