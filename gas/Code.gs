@@ -179,6 +179,14 @@ function doGet(e) {
         return handleGetUser(e);
       }
 
+      if (action === 'listConfirmedEvents') {
+        return handleListConfirmedEvents(e);
+      }
+
+      if (action === 'listUsers') {
+        return handleListUsers(e);
+      }
+
       return createJsonError('Unknown action');
     }
     
@@ -225,6 +233,18 @@ function doPost(e) {
 
     if (action === 'switchActiveSurvey') {
       return handleSwitchActiveSurvey(requestBody);
+    }
+
+    if (action === 'registerConfirmedEvent') {
+      return handleRegisterConfirmedEvent(requestBody);
+    }
+
+    if (action === 'addEventParticipants') {
+      return handleAddEventParticipants(requestBody);
+    }
+
+    if (action === 'removeEventParticipant') {
+      return handleRemoveEventParticipant(requestBody);
     }
     
     return createJsonError('Unknown action');
@@ -390,6 +410,230 @@ function handleSwitchActiveSurvey(payload) {
   return createJsonResponse({
     ok: true,
     activeSurveyId: surveyId
+  });
+}
+
+/**
+ * 確定日程の一覧を取得（fiscalYear でフィルタ可能）
+ *
+ * @param {Object} e - doGet のイベントオブジェクト
+ * @returns {ContentService} JSON レスポンス
+ */
+function handleListConfirmedEvents(e) {
+  var fiscalYear = getOptionalString(e.parameter.fiscalYear);
+  var events = getSheetRecords('ConfirmedEvents');
+  var participants = getSheetRecords('EventParticipants');
+  var participantsByEventId = buildParticipantIndex(participants);
+  var filtered = [];
+  var index;
+
+  for (index = 0; index < events.length; index += 1) {
+    if (!fiscalYear || String(events[index].fiscalYear) === fiscalYear) {
+      var evt = sanitizeConfirmedEventRecord(events[index]);
+      evt.participants = participantsByEventId[evt.eventId] || [];
+      filtered.push(evt);
+    }
+  }
+
+  filtered.sort(function(a, b) {
+    return String(a.eventDate).localeCompare(String(b.eventDate));
+  });
+
+  return createJsonResponse({
+    ok: true,
+    events: filtered
+  });
+}
+
+/**
+ * ユーザー一覧を取得（fiscalYear でフィルタ可能）
+ *
+ * @param {Object} e - doGet のイベントオブジェクト
+ * @returns {ContentService} JSON レスポンス
+ */
+function handleListUsers(e) {
+  var fiscalYear = getOptionalString(e.parameter.fiscalYear);
+  var users = getSheetRecords('Users');
+  var filtered = [];
+  var index;
+
+  for (index = 0; index < users.length; index += 1) {
+    if (!fiscalYear || String(users[index].fiscalYear) === fiscalYear) {
+      filtered.push(sanitizeUserRecord(users[index]));
+    }
+  }
+
+  return createJsonResponse({
+    ok: true,
+    users: filtered
+  });
+}
+
+/**
+ * 確定日程を登録
+ *
+ * @param {Object} payload - { fiscalYear, eventDate, targetGrade, className?, surveyId?, surveyDateId?, notes? }
+ * @returns {ContentService} JSON レスポンス
+ */
+function handleRegisterConfirmedEvent(payload) {
+  var fiscalYear = getRequiredString(payload.fiscalYear, 'fiscalYear');
+  var eventDate = getRequiredString(payload.eventDate, 'eventDate');
+  var targetGrade = getRequiredString(payload.targetGrade, 'targetGrade');
+
+  validateAllowedValue(targetGrade, ['年少', '年中', '年長', '全学年'], 'targetGrade');
+
+  var surveyIdOpt = getOptionalString(payload.surveyId);
+  var surveyDateIdOpt = getOptionalString(payload.surveyDateId);
+  var classNameOpt = getOptionalString(payload.className);
+  var notesOpt = getOptionalString(payload.notes);
+  var now = new Date();
+
+  var eventId = withLock(function() {
+    var id = generateSequentialId('ConfirmedEvents', 'eventId', 'evt_');
+    var sheet = getSheetOrThrow('ConfirmedEvents');
+    sheet.appendRow([
+      id,
+      surveyIdOpt,
+      surveyDateIdOpt,
+      fiscalYear,
+      eventDate,
+      targetGrade,
+      classNameOpt,
+      now,
+      notesOpt
+    ]);
+    return id;
+  });
+
+  logToSheet('INFO', 'handleRegisterConfirmedEvent', '確定日程を登録しました', {
+    eventId: eventId,
+    eventDate: eventDate,
+    targetGrade: targetGrade
+  });
+
+  return createJsonResponse({
+    ok: true,
+    event: sanitizeConfirmedEventRecord({
+      eventId: eventId,
+      surveyId: surveyIdOpt,
+      surveyDateId: surveyDateIdOpt,
+      fiscalYear: fiscalYear,
+      eventDate: eventDate,
+      targetGrade: targetGrade,
+      className: classNameOpt,
+      confirmedAt: now,
+      notes: notesOpt
+    })
+  });
+}
+
+/**
+ * 確定日程に参加者を追加（複数可）
+ *
+ * @param {Object} payload - { eventId, participants: [{ lineUserId, role?, notes? }] }
+ * @returns {ContentService} JSON レスポンス
+ */
+function handleAddEventParticipants(payload) {
+  var eventId = getRequiredString(payload.eventId, 'eventId');
+
+  if (!payload.participants || !payload.participants.length) {
+    throw new Error('participants is required and must be a non-empty array');
+  }
+
+  // eventId の存在確認
+  var events = getSheetRecords('ConfirmedEvents');
+  var event = findRecordByField(events, 'eventId', eventId);
+  if (!event) {
+    throw new Error('Event not found: ' + eventId);
+  }
+
+  // 先にバリデーションを全件実施（部分書き込みを防止）
+  var validated = [];
+  var index;
+  for (index = 0; index < payload.participants.length; index += 1) {
+    var p = payload.participants[index];
+    var lineUserId = getRequiredString(p.lineUserId, 'participants[' + index + '].lineUserId');
+    var role = getOptionalString(p.role) || 'reader';
+    validateAllowedValue(role, ['reader', 'helper'], 'participants[' + index + '].role');
+    validated.push({
+      lineUserId: lineUserId,
+      role: role,
+      notes: getOptionalString(p.notes)
+    });
+  }
+
+  // ロック内で ID 生成と書き込みを一括実行
+  var added = withLock(function() {
+    var sheet = getSheetOrThrow('EventParticipants');
+    var now = new Date();
+    var results = [];
+    var lastNum = getMaxSequentialNumber('EventParticipants', 'participantId', 'par_');
+    var i;
+
+    for (i = 0; i < validated.length; i += 1) {
+      lastNum += 1;
+      var participantId = 'par_' + String(lastNum).padStart(3, '0');
+      sheet.appendRow([
+        participantId,
+        eventId,
+        validated[i].lineUserId,
+        validated[i].role,
+        now,
+        validated[i].notes
+      ]);
+      results.push(sanitizeEventParticipantRecord({
+        participantId: participantId,
+        eventId: eventId,
+        lineUserId: validated[i].lineUserId,
+        role: validated[i].role,
+        confirmedAt: now,
+        notes: validated[i].notes
+      }));
+    }
+
+    return results;
+  });
+
+  logToSheet('INFO', 'handleAddEventParticipants', '参加者を追加しました', {
+    eventId: eventId,
+    count: added.length
+  });
+
+  return createJsonResponse({
+    ok: true,
+    participants: added
+  });
+}
+
+/**
+ * 確定日程から参加者を削除
+ *
+ * @param {Object} payload - { participantId }
+ * @returns {ContentService} JSON レスポンス
+ */
+function handleRemoveEventParticipant(payload) {
+  var participantId = getRequiredString(payload.participantId, 'participantId');
+
+  return withLock(function() {
+    var sheet = getSheetOrThrow('EventParticipants');
+    var records = getSheetRecords('EventParticipants');
+    var target = findRecordByField(records, 'participantId', participantId);
+
+    if (!target) {
+      throw new Error('Participant not found: ' + participantId);
+    }
+
+    sheet.deleteRow(target._rowNumber);
+
+    logToSheet('INFO', 'handleRemoveEventParticipant', '参加者を削除しました', {
+      participantId: participantId,
+      eventId: target.eventId
+    });
+
+    return createJsonResponse({
+      ok: true,
+      deleted: participantId
+    });
   });
 }
 
@@ -907,6 +1151,66 @@ function sanitizeResponseRecord(record) {
     submittedAt: toIsoString(record.submittedAt),
     notes: String(record.notes || '')
   };
+}
+
+function sanitizeConfirmedEventRecord(record) {
+  return {
+    eventId: String(record.eventId || ''),
+    surveyId: String(record.surveyId || ''),
+    surveyDateId: String(record.surveyDateId || ''),
+    fiscalYear: String(record.fiscalYear || ''),
+    eventDate: toIsoString(record.eventDate),
+    targetGrade: String(record.targetGrade || ''),
+    className: String(record.className || ''),
+    confirmedAt: toIsoString(record.confirmedAt),
+    notes: String(record.notes || '')
+  };
+}
+
+function sanitizeEventParticipantRecord(record) {
+  return {
+    participantId: String(record.participantId || ''),
+    eventId: String(record.eventId || ''),
+    lineUserId: String(record.lineUserId || ''),
+    role: String(record.role || ''),
+    confirmedAt: toIsoString(record.confirmedAt),
+    notes: String(record.notes || '')
+  };
+}
+
+function buildParticipantIndex(allParticipants) {
+  var index = {};
+  var i;
+  var eid;
+
+  for (i = 0; i < allParticipants.length; i += 1) {
+    eid = String(allParticipants[i].eventId || '');
+    if (!index[eid]) {
+      index[eid] = [];
+    }
+    index[eid].push(sanitizeEventParticipantRecord(allParticipants[i]));
+  }
+
+  return index;
+}
+
+function getMaxSequentialNumber(sheetName, fieldName, prefix) {
+  var records = getSheetRecords(sheetName);
+  var lastNumber = 0;
+  var index;
+  var recordValue;
+  var match;
+
+  for (index = 0; index < records.length; index += 1) {
+    recordValue = String(records[index][fieldName] || '');
+    match = recordValue.match(new RegExp('^' + prefix.replace('_', '\\_') + '(\\d+)$'));
+
+    if (match) {
+      lastNumber = Math.max(lastNumber, parseInt(match[1], 10));
+    }
+  }
+
+  return lastNumber;
 }
 
 function toIsoString(value) {
