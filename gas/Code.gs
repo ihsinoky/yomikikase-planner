@@ -423,13 +423,14 @@ function handleListConfirmedEvents(e) {
   var fiscalYear = getOptionalString(e.parameter.fiscalYear);
   var events = getSheetRecords('ConfirmedEvents');
   var participants = getSheetRecords('EventParticipants');
+  var participantsByEventId = buildParticipantIndex(participants);
   var filtered = [];
   var index;
 
   for (index = 0; index < events.length; index += 1) {
     if (!fiscalYear || String(events[index].fiscalYear) === fiscalYear) {
       var evt = sanitizeConfirmedEventRecord(events[index]);
-      evt.participants = getParticipantsForEvent(participants, evt.eventId);
+      evt.participants = participantsByEventId[evt.eventId] || [];
       filtered.push(evt);
     }
   }
@@ -481,21 +482,28 @@ function handleRegisterConfirmedEvent(payload) {
 
   validateAllowedValue(targetGrade, ['年少', '年中', '年長', '全学年'], 'targetGrade');
 
-  var eventId = generateSequentialId('ConfirmedEvents', 'eventId', 'evt_');
+  var surveyIdOpt = getOptionalString(payload.surveyId);
+  var surveyDateIdOpt = getOptionalString(payload.surveyDateId);
+  var classNameOpt = getOptionalString(payload.className);
+  var notesOpt = getOptionalString(payload.notes);
   var now = new Date();
-  var values = [
-    eventId,
-    getOptionalString(payload.surveyId),
-    getOptionalString(payload.surveyDateId),
-    fiscalYear,
-    eventDate,
-    targetGrade,
-    getOptionalString(payload.className),
-    now,
-    getOptionalString(payload.notes)
-  ];
 
-  appendSheetRecord('ConfirmedEvents', values);
+  var eventId = withLock(function() {
+    var id = generateSequentialId('ConfirmedEvents', 'eventId', 'evt_');
+    var sheet = getSheetOrThrow('ConfirmedEvents');
+    sheet.appendRow([
+      id,
+      surveyIdOpt,
+      surveyDateIdOpt,
+      fiscalYear,
+      eventDate,
+      targetGrade,
+      classNameOpt,
+      now,
+      notesOpt
+    ]);
+    return id;
+  });
 
   logToSheet('INFO', 'handleRegisterConfirmedEvent', '確定日程を登録しました', {
     eventId: eventId,
@@ -507,14 +515,14 @@ function handleRegisterConfirmedEvent(payload) {
     ok: true,
     event: sanitizeConfirmedEventRecord({
       eventId: eventId,
-      surveyId: getOptionalString(payload.surveyId),
-      surveyDateId: getOptionalString(payload.surveyDateId),
+      surveyId: surveyIdOpt,
+      surveyDateId: surveyDateIdOpt,
       fiscalYear: fiscalYear,
       eventDate: eventDate,
       targetGrade: targetGrade,
-      className: getOptionalString(payload.className),
+      className: classNameOpt,
       confirmedAt: now,
-      notes: getOptionalString(payload.notes)
+      notes: notesOpt
     })
   });
 }
@@ -539,35 +547,52 @@ function handleAddEventParticipants(payload) {
     throw new Error('Event not found: ' + eventId);
   }
 
-  var now = new Date();
-  var added = [];
+  // 先にバリデーションを全件実施（部分書き込みを防止）
+  var validated = [];
   var index;
-
   for (index = 0; index < payload.participants.length; index += 1) {
     var p = payload.participants[index];
     var lineUserId = getRequiredString(p.lineUserId, 'participants[' + index + '].lineUserId');
     var role = getOptionalString(p.role) || 'reader';
-    var participantId = generateSequentialId('EventParticipants', 'participantId', 'par_');
-    var values = [
-      participantId,
-      eventId,
-      lineUserId,
-      role,
-      now,
-      getOptionalString(p.notes)
-    ];
-
-    appendSheetRecord('EventParticipants', values);
-
-    added.push(sanitizeEventParticipantRecord({
-      participantId: participantId,
-      eventId: eventId,
+    validateAllowedValue(role, ['reader', 'helper'], 'participants[' + index + '].role');
+    validated.push({
       lineUserId: lineUserId,
       role: role,
-      confirmedAt: now,
       notes: getOptionalString(p.notes)
-    }));
+    });
   }
+
+  // ロック内で ID 生成と書き込みを一括実行
+  var added = withLock(function() {
+    var sheet = getSheetOrThrow('EventParticipants');
+    var now = new Date();
+    var results = [];
+    var lastNum = getMaxSequentialNumber('EventParticipants', 'participantId', 'par_');
+    var i;
+
+    for (i = 0; i < validated.length; i += 1) {
+      lastNum += 1;
+      var participantId = 'par_' + String(lastNum).padStart(3, '0');
+      sheet.appendRow([
+        participantId,
+        eventId,
+        validated[i].lineUserId,
+        validated[i].role,
+        now,
+        validated[i].notes
+      ]);
+      results.push(sanitizeEventParticipantRecord({
+        participantId: participantId,
+        eventId: eventId,
+        lineUserId: validated[i].lineUserId,
+        role: validated[i].role,
+        confirmedAt: now,
+        notes: validated[i].notes
+      }));
+    }
+
+    return results;
+  });
 
   logToSheet('INFO', 'handleAddEventParticipants', '参加者を追加しました', {
     eventId: eventId,
@@ -1153,17 +1178,39 @@ function sanitizeEventParticipantRecord(record) {
   };
 }
 
-function getParticipantsForEvent(allParticipants, eventId) {
-  var result = [];
-  var index;
+function buildParticipantIndex(allParticipants) {
+  var index = {};
+  var i;
+  var eid;
 
-  for (index = 0; index < allParticipants.length; index += 1) {
-    if (String(allParticipants[index].eventId) === String(eventId)) {
-      result.push(sanitizeEventParticipantRecord(allParticipants[index]));
+  for (i = 0; i < allParticipants.length; i += 1) {
+    eid = String(allParticipants[i].eventId || '');
+    if (!index[eid]) {
+      index[eid] = [];
+    }
+    index[eid].push(sanitizeEventParticipantRecord(allParticipants[i]));
+  }
+
+  return index;
+}
+
+function getMaxSequentialNumber(sheetName, fieldName, prefix) {
+  var records = getSheetRecords(sheetName);
+  var lastNumber = 0;
+  var index;
+  var recordValue;
+  var match;
+
+  for (index = 0; index < records.length; index += 1) {
+    recordValue = String(records[index][fieldName] || '');
+    match = recordValue.match(new RegExp('^' + prefix.replace('_', '\\_') + '(\\d+)$'));
+
+    if (match) {
+      lastNumber = Math.max(lastNumber, parseInt(match[1], 10));
     }
   }
 
-  return result;
+  return lastNumber;
 }
 
 function toIsoString(value) {
