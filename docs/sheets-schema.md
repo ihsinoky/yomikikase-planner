@@ -11,7 +11,7 @@
 
 ## タブ構成
 
-以下の6つのタブで構成します：
+以下のタブで構成します：
 
 1. **Config** - システム設定
 2. **Surveys** - アンケート本体
@@ -20,7 +20,9 @@
 5. **Responses** - アンケート回答
 6. **ConfirmedEvents** - 確定日程
 7. **EventParticipants** - 確定日程の参加者
-8. **Logs** - 実行ログ（エラー追跡用）
+8. **Books** - 絵本マスタ
+9. **ReadingRecords** - 読み聞かせ記録
+10. **Logs** - 実行ログ（エラー追跡用）
 
 ---
 
@@ -251,7 +253,70 @@ par_003,evt_002,U3456789012cdefgh,reader,2025-01-10 09:00:00,
 
 ---
 
-## 8. Logs タブ
+## 8. Books タブ
+
+絵本マスタ情報を保持します。ISBN から外部 API で取得した書誌情報を格納します。
+
+### 列定義
+
+| 列名 | データ型 | 必須 | 説明 | 例 |
+|------|---------|------|------|-----|
+| bookId | string | ✓ | 絵本一意ID | `book_001` |
+| isbn | string | | ISBN（手動登録時は空可） | `9784834000825` |
+| title | string | ✓ | タイトル | `ぐりとぐら` |
+| author | string | | 著者 | `中川李枝子` |
+| publisher | string | | 出版社 | `福音館書店` |
+| coverImageUrl | string | | 表紙画像URL | `https://...` |
+| createdAt | datetime | ✓ | 登録日時 | `2025-12-28 10:00:00` |
+| updatedAt | datetime | | 最終更新日時 | `2025-12-28 10:00:00` |
+
+### サンプルデータ
+
+```csv
+bookId,isbn,title,author,publisher,coverImageUrl,createdAt,updatedAt
+book_001,9784834000825,ぐりとぐら,中川李枝子,福音館書店,,2025-12-28 10:00:00,2025-12-28 10:00:00
+book_002,9784032060102,はらぺこあおむし,エリック・カール,偕成社,,2025-12-28 10:05:00,2025-12-28 10:05:00
+```
+
+---
+
+## 9. ReadingRecords タブ
+
+読み聞かせ記録を保持します。どの年度・学年でどの絵本を読んだかを記録します。
+
+### 列定義
+
+| 列名 | データ型 | 必須 | 説明 | 例 |
+|------|---------|------|------|-----|
+| recordId | string | ✓ | 記録一意ID | `rec_001` |
+| bookId | string | ✓ | 絵本ID（外部キー） | `book_001` |
+| eventId | string | | 確定日程ID（任意） | `evt_001` |
+| fiscalYear | string | ✓ | 年度 | `2025` |
+| readDate | datetime | ✓ | 読み聞かせ日 | `2025-01-15 10:00:00` |
+| targetGrade | string | ✓ | 対象学年 | `年少`, `年中`, `年長`, `全学年` |
+| className | string | | 対象クラス（任意） | `さくら組` |
+| readerUserId | string | | 読み手のLINE ユーザーID（任意） | `U1234567890abcdef` |
+| createdAt | datetime | ✓ | 登録日時 | `2025-01-15 12:00:00` |
+| notes | string | | 備考 | `子どもたちに大変好評でした` |
+
+### targetGrade 許可値
+
+- `年少`
+- `年中`
+- `年長`
+- `全学年`
+
+### サンプルデータ
+
+```csv
+recordId,bookId,eventId,fiscalYear,readDate,targetGrade,className,readerUserId,createdAt,notes
+rec_001,book_001,,2025,2025-01-15 10:00:00,年少,さくら組,U1234567890abcdef,2025-01-15 12:00:00,
+rec_002,book_002,evt_001,2025,2025-01-15 10:00:00,年少,さくら組,,2025-01-15 12:00:00,子どもたちに大変好評でした
+```
+
+---
+
+## 10. Logs タブ
 
 GAS実行時のログ、特にエラー情報を記録します。
 
@@ -310,6 +375,15 @@ Surveys (1) ←―→ (N) ConfirmedEvents
 Users (1) ←―→ (N) EventParticipants
   - 1人のユーザーが複数の日程に参加
 
+Books (1) ←―→ (N) ReadingRecords
+  - 1冊の絵本に複数の読み聞かせ記録
+
+ConfirmedEvents (1) ←―→ (N) ReadingRecords
+  - 1つの確定日程に複数の読み聞かせ記録（任意）
+
+Users (1) ←―→ (N) ReadingRecords
+  - 1人のユーザーが複数の読み聞かせ記録の読み手（任意）
+
 Logs
   - 独立したログテーブル
 ```
@@ -325,6 +399,8 @@ Logs
 - `responseId`: `res_` + 3桁連番（例: `res_001`）
 - `eventId`: `evt_` + 3桁連番（例: `evt_001`）
 - `participantId`: `par_` + 3桁連番（例: `par_001`）
+- `bookId`: `book_` + 3桁連番（例: `book_001`）
+- `recordId`: `rec_` + 3桁連番（例: `rec_001`）
 - `logId`: `log_` + 3桁連番（例: `log_001`）
 
 GAS実装時は、最終行のIDを取得して自動採番することを推奨します。

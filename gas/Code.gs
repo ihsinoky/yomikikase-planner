@@ -187,6 +187,18 @@ function doGet(e) {
         return handleListUsers(e);
       }
 
+      if (action === 'listBooks') {
+        return handleListBooks(e);
+      }
+
+      if (action === 'listReadingRecords') {
+        return handleListReadingRecords(e);
+      }
+
+      if (action === 'getBookHistory') {
+        return handleGetBookHistory(e);
+      }
+
       return createJsonError('Unknown action');
     }
     
@@ -245,6 +257,14 @@ function doPost(e) {
 
     if (action === 'removeEventParticipant') {
       return handleRemoveEventParticipant(requestBody);
+    }
+
+    if (action === 'registerBook') {
+      return handleRegisterBook(requestBody);
+    }
+
+    if (action === 'registerReadingRecord') {
+      return handleRegisterReadingRecord(requestBody);
     }
     
     return createJsonError('Unknown action');
@@ -678,6 +698,256 @@ function handleSaveResponse(payload) {
   return createJsonResponse({
     ok: true,
     response: savedResponse
+  });
+}
+
+// ========================================
+// Book & Reading Record Handlers
+// ========================================
+
+/**
+ * 絵本マスタの一覧を取得（検索クエリ対応）
+ *
+ * @param {Object} e - doGet のイベントオブジェクト
+ * @returns {ContentService} JSON レスポンス
+ */
+function handleListBooks(e) {
+  var q = getOptionalString(e.parameter.q);
+  var books = getSheetRecords('Books');
+  var filtered = [];
+  var index;
+
+  for (index = 0; index < books.length; index += 1) {
+    if (!q || matchesBookSearch(books[index], q)) {
+      filtered.push(sanitizeBookRecord(books[index]));
+    }
+  }
+
+  return createJsonResponse({
+    ok: true,
+    books: filtered
+  });
+}
+
+/**
+ * 絵本マスタを登録
+ *
+ * @param {Object} payload - { title, isbn?, author?, publisher?, coverImageUrl? }
+ * @returns {ContentService} JSON レスポンス
+ */
+function handleRegisterBook(payload) {
+  var title = getRequiredString(payload.title, 'title');
+  var isbn = getOptionalString(payload.isbn);
+  var author = getOptionalString(payload.author);
+  var publisher = getOptionalString(payload.publisher);
+  var coverImageUrl = getOptionalString(payload.coverImageUrl);
+  var now = new Date();
+
+  // ISBN 重複チェック + ID 生成 + 書き込みをロック内で原子的に実行
+  var result = withLock(function() {
+    if (isbn) {
+      var existingBooks = getSheetRecords('Books');
+      var existing = findRecordByField(existingBooks, 'isbn', isbn);
+      if (existing) {
+        return { alreadyExists: true, book: existing };
+      }
+    }
+
+    var id = generateSequentialId('Books', 'bookId', 'book_');
+    var sheet = getSheetOrThrow('Books');
+    sheet.appendRow([
+      id,
+      isbn,
+      title,
+      author,
+      publisher,
+      coverImageUrl,
+      now,
+      now
+    ]);
+    return { alreadyExists: false, bookId: id };
+  });
+
+  if (result.alreadyExists) {
+    return createJsonResponse({
+      ok: true,
+      book: sanitizeBookRecord(result.book),
+      alreadyExists: true
+    });
+  }
+
+  var bookId = result.bookId;
+
+  logToSheet('INFO', 'handleRegisterBook', '絵本を登録しました', {
+    bookId: bookId,
+    title: title,
+    isbn: isbn
+  });
+
+  return createJsonResponse({
+    ok: true,
+    book: sanitizeBookRecord({
+      bookId: bookId,
+      isbn: isbn,
+      title: title,
+      author: author,
+      publisher: publisher,
+      coverImageUrl: coverImageUrl,
+      createdAt: now,
+      updatedAt: now
+    }),
+    alreadyExists: false
+  });
+}
+
+/**
+ * 読み聞かせ記録の一覧を取得（fiscalYear, targetGrade でフィルタ可能）
+ *
+ * @param {Object} e - doGet のイベントオブジェクト
+ * @returns {ContentService} JSON レスポンス
+ */
+function handleListReadingRecords(e) {
+  var fiscalYear = getOptionalString(e.parameter.fiscalYear);
+  var targetGrade = getOptionalString(e.parameter.targetGrade);
+  var bookId = getOptionalString(e.parameter.bookId);
+  var records = getSheetRecords('ReadingRecords');
+  var books = getSheetRecords('Books');
+  var bookIndex = buildBookIndex(books);
+  var filtered = [];
+  var index;
+
+  for (index = 0; index < records.length; index += 1) {
+    var rec = records[index];
+    if (fiscalYear && String(rec.fiscalYear) !== fiscalYear) {
+      continue;
+    }
+    if (targetGrade && String(rec.targetGrade) !== targetGrade) {
+      continue;
+    }
+    if (bookId && String(rec.bookId) !== bookId) {
+      continue;
+    }
+
+    var sanitized = sanitizeReadingRecordRecord(rec);
+    var book = bookIndex[sanitized.bookId];
+    if (book) {
+      sanitized.book = book;
+    }
+    filtered.push(sanitized);
+  }
+
+  filtered.sort(function(a, b) {
+    return String(b.readDate).localeCompare(String(a.readDate));
+  });
+
+  return createJsonResponse({
+    ok: true,
+    records: filtered
+  });
+}
+
+/**
+ * 読み聞かせ記録を登録
+ *
+ * @param {Object} payload - { bookId, fiscalYear, readDate, targetGrade, className?, eventId?, readerUserId?, notes? }
+ * @returns {ContentService} JSON レスポンス
+ */
+function handleRegisterReadingRecord(payload) {
+  var bookId = getRequiredString(payload.bookId, 'bookId');
+  var fiscalYear = getRequiredString(payload.fiscalYear, 'fiscalYear');
+  var readDate = getRequiredString(payload.readDate, 'readDate');
+  var targetGrade = getRequiredString(payload.targetGrade, 'targetGrade');
+
+  validateAllowedValue(targetGrade, ['年少', '年中', '年長', '全学年'], 'targetGrade');
+
+  // bookId の存在確認
+  var books = getSheetRecords('Books');
+  var book = findRecordByField(books, 'bookId', bookId);
+  if (!book) {
+    return createJsonError('Book not found: ' + bookId);
+  }
+
+  var classNameOpt = getOptionalString(payload.className);
+  var eventIdOpt = getOptionalString(payload.eventId);
+  var readerUserIdOpt = getOptionalString(payload.readerUserId);
+  var notesOpt = getOptionalString(payload.notes);
+  var now = new Date();
+
+  var recordId = withLock(function() {
+    var id = generateSequentialId('ReadingRecords', 'recordId', 'rec_');
+    var sheet = getSheetOrThrow('ReadingRecords');
+    sheet.appendRow([
+      id,
+      bookId,
+      eventIdOpt,
+      fiscalYear,
+      readDate,
+      targetGrade,
+      classNameOpt,
+      readerUserIdOpt,
+      now,
+      notesOpt
+    ]);
+    return id;
+  });
+
+  logToSheet('INFO', 'handleRegisterReadingRecord', '読み聞かせ記録を登録しました', {
+    recordId: recordId,
+    bookId: bookId,
+    fiscalYear: fiscalYear,
+    targetGrade: targetGrade
+  });
+
+  return createJsonResponse({
+    ok: true,
+    record: sanitizeReadingRecordRecord({
+      recordId: recordId,
+      bookId: bookId,
+      eventId: eventIdOpt,
+      fiscalYear: fiscalYear,
+      readDate: readDate,
+      targetGrade: targetGrade,
+      className: classNameOpt,
+      readerUserId: readerUserIdOpt,
+      createdAt: now,
+      notes: notesOpt
+    })
+  });
+}
+
+/**
+ * 絵本ごとの読み聞かせ履歴を取得
+ *
+ * @param {Object} e - doGet のイベントオブジェクト
+ * @returns {ContentService} JSON レスポンス
+ */
+function handleGetBookHistory(e) {
+  var bookId = getRequiredString(e.parameter.bookId, 'bookId');
+
+  var books = getSheetRecords('Books');
+  var book = findRecordByField(books, 'bookId', bookId);
+  if (!book) {
+    return createJsonError('Book not found: ' + bookId);
+  }
+
+  var records = getSheetRecords('ReadingRecords');
+  var history = [];
+  var index;
+
+  for (index = 0; index < records.length; index += 1) {
+    if (String(records[index].bookId) === bookId) {
+      history.push(sanitizeReadingRecordRecord(records[index]));
+    }
+  }
+
+  history.sort(function(a, b) {
+    return String(b.readDate).localeCompare(String(a.readDate));
+  });
+
+  return createJsonResponse({
+    ok: true,
+    book: sanitizeBookRecord(book),
+    records: history
   });
 }
 
@@ -1176,6 +1446,62 @@ function sanitizeEventParticipantRecord(record) {
     confirmedAt: toIsoString(record.confirmedAt),
     notes: String(record.notes || '')
   };
+}
+
+function sanitizeBookRecord(record) {
+  return {
+    bookId: String(record.bookId || ''),
+    isbn: String(record.isbn || ''),
+    title: String(record.title || ''),
+    author: String(record.author || ''),
+    publisher: String(record.publisher || ''),
+    coverImageUrl: String(record.coverImageUrl || ''),
+    createdAt: toIsoString(record.createdAt),
+    updatedAt: toIsoString(record.updatedAt)
+  };
+}
+
+function sanitizeReadingRecordRecord(record) {
+  return {
+    recordId: String(record.recordId || ''),
+    bookId: String(record.bookId || ''),
+    eventId: String(record.eventId || ''),
+    fiscalYear: String(record.fiscalYear || ''),
+    readDate: toIsoString(record.readDate),
+    targetGrade: String(record.targetGrade || ''),
+    className: String(record.className || ''),
+    readerUserId: String(record.readerUserId || ''),
+    createdAt: toIsoString(record.createdAt),
+    notes: String(record.notes || '')
+  };
+}
+
+function buildBookIndex(allBooks) {
+  var index = {};
+  var i;
+  var bid;
+
+  for (i = 0; i < allBooks.length; i += 1) {
+    bid = String(allBooks[i].bookId || '');
+    if (bid) {
+      index[bid] = sanitizeBookRecord(allBooks[i]);
+    }
+  }
+
+  return index;
+}
+
+function matchesBookSearch(record, query) {
+  var lowerQuery = query.toLowerCase();
+  var title = String(record.title || '').toLowerCase();
+  var author = String(record.author || '').toLowerCase();
+  var isbn = String(record.isbn || '').toLowerCase();
+  var publisher = String(record.publisher || '').toLowerCase();
+
+  return title.indexOf(lowerQuery) !== -1 ||
+    author.indexOf(lowerQuery) !== -1 ||
+    isbn.indexOf(lowerQuery) !== -1 ||
+    publisher.indexOf(lowerQuery) !== -1;
 }
 
 function buildParticipantIndex(allParticipants) {
