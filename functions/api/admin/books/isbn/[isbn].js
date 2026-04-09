@@ -12,9 +12,9 @@ export async function onRequestGet({ request, env, params }) {
 
   const isbn = params.isbn;
 
-  if (!isbn || !/^\d{10,13}$/.test(isbn)) {
+  if (!isbn || !((/^\d{9}[\dXx]$/).test(isbn) || (/^\d{13}$/).test(isbn))) {
     return jsonResponse(
-      { ok: false, error: 'Valid ISBN (10 or 13 digits) is required' },
+      { ok: false, error: 'Valid ISBN-10 (10 digits, last may be X) or ISBN-13 (13 digits) is required' },
       400
     );
   }

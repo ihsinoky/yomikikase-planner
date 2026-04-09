@@ -743,20 +743,16 @@ function handleRegisterBook(payload) {
   var coverImageUrl = getOptionalString(payload.coverImageUrl);
   var now = new Date();
 
-  // ISBN が指定されている場合は重複チェック
-  if (isbn) {
-    var existingBooks = getSheetRecords('Books');
-    var existing = findRecordByField(existingBooks, 'isbn', isbn);
-    if (existing) {
-      return createJsonResponse({
-        ok: true,
-        book: sanitizeBookRecord(existing),
-        alreadyExists: true
-      });
+  // ISBN 重複チェック + ID 生成 + 書き込みをロック内で原子的に実行
+  var result = withLock(function() {
+    if (isbn) {
+      var existingBooks = getSheetRecords('Books');
+      var existing = findRecordByField(existingBooks, 'isbn', isbn);
+      if (existing) {
+        return { alreadyExists: true, book: existing };
+      }
     }
-  }
 
-  var bookId = withLock(function() {
     var id = generateSequentialId('Books', 'bookId', 'book_');
     var sheet = getSheetOrThrow('Books');
     sheet.appendRow([
@@ -769,8 +765,18 @@ function handleRegisterBook(payload) {
       now,
       now
     ]);
-    return id;
+    return { alreadyExists: false, bookId: id };
   });
+
+  if (result.alreadyExists) {
+    return createJsonResponse({
+      ok: true,
+      book: sanitizeBookRecord(result.book),
+      alreadyExists: true
+    });
+  }
+
+  var bookId = result.bookId;
 
   logToSheet('INFO', 'handleRegisterBook', '絵本を登録しました', {
     bookId: bookId,
@@ -858,7 +864,7 @@ function handleRegisterReadingRecord(payload) {
   var books = getSheetRecords('Books');
   var book = findRecordByField(books, 'bookId', bookId);
   if (!book) {
-    throw new Error('Book not found: ' + bookId);
+    return createJsonError('Book not found: ' + bookId);
   }
 
   var classNameOpt = getOptionalString(payload.className);
@@ -921,7 +927,7 @@ function handleGetBookHistory(e) {
   var books = getSheetRecords('Books');
   var book = findRecordByField(books, 'bookId', bookId);
   if (!book) {
-    throw new Error('Book not found: ' + bookId);
+    return createJsonError('Book not found: ' + bookId);
   }
 
   var records = getSheetRecords('ReadingRecords');
