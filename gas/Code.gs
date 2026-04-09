@@ -972,21 +972,19 @@ function handleGetBookHistory(e) {
 function handleExportFiscalYearData(e) {
   var fiscalYear = getRequiredString(e.parameter.fiscalYear, 'fiscalYear');
 
-  var surveys = filterByFiscalYear(getSheetRecords('Surveys'), fiscalYear);
-  var surveyIds = pluckField(surveys, 'surveyId');
-  var surveyDates = filterByForeignKeys(getSheetRecords('SurveyDates'), 'surveyId', surveyIds);
-  var responses = filterByForeignKeys(getSheetRecords('Responses'), 'surveyId', surveyIds);
-  var users = filterByFiscalYear(getSheetRecords('Users'), fiscalYear);
-  var events = filterByFiscalYear(getSheetRecords('ConfirmedEvents'), fiscalYear);
-  var eventIds = pluckField(events, 'eventId');
-  var participants = filterByForeignKeys(getSheetRecords('EventParticipants'), 'eventId', eventIds);
-  var readingRecords = filterByFiscalYear(getSheetRecords('ReadingRecords'), fiscalYear);
+  // 整合性のあるスナップショットを取得するためロック内で全シートを読み出す
+  var snapshot = withLock(function() {
+    var surveys = filterByFiscalYear(getSheetRecords('Surveys'), fiscalYear);
+    var surveyIds = pluckField(surveys, 'surveyId');
+    var surveyDates = filterByForeignKeys(getSheetRecords('SurveyDates'), 'surveyId', surveyIds);
+    var responses = filterByForeignKeys(getSheetRecords('Responses'), 'surveyId', surveyIds);
+    var users = filterByFiscalYear(getSheetRecords('Users'), fiscalYear);
+    var events = filterByFiscalYear(getSheetRecords('ConfirmedEvents'), fiscalYear);
+    var eventIds = pluckField(events, 'eventId');
+    var participants = filterByForeignKeys(getSheetRecords('EventParticipants'), 'eventId', eventIds);
+    var readingRecords = filterByFiscalYear(getSheetRecords('ReadingRecords'), fiscalYear);
 
-  return createJsonResponse({
-    ok: true,
-    fiscalYear: fiscalYear,
-    exportedAt: new Date().toISOString(),
-    data: {
+    return {
       surveys: surveys.map(sanitizeSurveyRecord),
       surveyDates: surveyDates.map(sanitizeSurveyDateRecord),
       responses: responses.map(sanitizeResponseRecord),
@@ -994,7 +992,14 @@ function handleExportFiscalYearData(e) {
       confirmedEvents: events.map(sanitizeConfirmedEventRecord),
       eventParticipants: participants.map(sanitizeEventParticipantRecord),
       readingRecords: readingRecords.map(sanitizeReadingRecordRecord)
-    }
+    };
+  });
+
+  return createJsonResponse({
+    ok: true,
+    fiscalYear: fiscalYear,
+    exportedAt: new Date().toISOString(),
+    data: snapshot
   });
 }
 
@@ -1014,17 +1019,18 @@ function handleDeleteFiscalYearData(payload) {
     return createJsonError('confirm must be true to delete fiscal year data');
   }
 
-  // アクティブなアンケートが対象年度に含まれていないか確認
-  var activeSurveyId = getConfigValue('activeSurveyId');
-  if (activeSurveyId) {
-    var surveys = getSheetRecords('Surveys');
-    var activeSurvey = findRecordByField(surveys, 'surveyId', activeSurveyId);
-    if (activeSurvey && String(activeSurvey.fiscalYear) === fiscalYear) {
-      return createJsonError('Cannot delete data for the fiscal year that contains the active survey. Switch activeSurveyId first.');
+  // アクティブアンケート検証と削除を同一ロック内で実行（TOCTOU 防止）
+  var result = withLock(function() {
+    // アクティブなアンケートが対象年度に含まれていないか確認
+    var activeSurveyId = getConfigValue('activeSurveyId');
+    if (activeSurveyId) {
+      var allSurveysForCheck = getSheetRecords('Surveys');
+      var activeSurvey = findRecordByField(allSurveysForCheck, 'surveyId', activeSurveyId);
+      if (activeSurvey && String(activeSurvey.fiscalYear) === fiscalYear) {
+        return { error: 'Cannot delete data for the fiscal year that contains the active survey. Switch activeSurveyId first.' };
+      }
     }
-  }
 
-  var deletedCounts = withLock(function() {
     var counts = {};
 
     // 先に対象の surveyId / eventId を取得（子テーブル削除用）
@@ -1056,8 +1062,14 @@ function handleDeleteFiscalYearData(payload) {
     counts.users = deleteRowsByFiscalYear('Users', fiscalYear);
     counts.surveys = deleteRowsByFiscalYear('Surveys', fiscalYear);
 
-    return counts;
+    return { counts: counts };
   });
+
+  if (result.error) {
+    return createJsonError(result.error);
+  }
+
+  var deletedCounts = result.counts;
 
   logToSheet('WARN', 'handleDeleteFiscalYearData', '年度データを削除しました', {
     fiscalYear: fiscalYear,
