@@ -1,6 +1,6 @@
 import { jsonResponse } from './headers.js';
 
-const GAS_TIMEOUT_MS = 10000;
+const GAS_TIMEOUT_MS = 30000;
 
 function getGasConfig(env) {
   const gasBaseUrl = env.GAS_BASE_URL;

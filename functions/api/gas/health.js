@@ -58,7 +58,7 @@ export async function onRequestGet({ request, env }) {
 
     // Make request to GAS with timeout
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout (GAS cold start)
     
     let gasResponse = null;
     try {
