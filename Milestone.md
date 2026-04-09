@@ -5,8 +5,7 @@
 
 ## 現在地
 
-- 完了: Milestone 0, 1, 2
-- 進行中: Milestone 3
+- 完了: Milestone 0, 1, 2, 3
 - 未着手: Milestone 4, 5, 6
 
 現行実装の一次ソース:
@@ -64,7 +63,7 @@
 
 **目的:** 保護者が LINE 上で実際にアンケート回答できる状態にする
 
-**状況:** 進行中
+**状況:** 完了
 
 - [x] LIFF 起動、ログイン、`userId` / `displayName` の取得
 - [x] `health` / `config` 系の基盤 API を用意
@@ -74,10 +73,10 @@
 - [x] 初回プロフィール登録と `Users` シート連携を実装
 - [x] ID トークン検証を実装
 - [x] LIFF なしで確認できる `?preview=1` プレビュー導線を実装
-- [ ] Cloudflare Pages 本番デプロイへ最新コードを反映し、`/api/survey` と `/?preview=1` を確認
-- [ ] 実データの Spreadsheet を使って、ユーザー登録と回答保存の本番検証を完了
+- [x] Cloudflare Pages 本番デプロイへ最新コードを反映し、`/api/survey` と `/?preview=1` を確認
+- [x] 実データの Spreadsheet を使って、ユーザー登録と回答保存の本番検証を完了
 
-コード上は `gas/Code.gs` の `getActiveSurvey`, `registerUser`, `saveResponse` と、Cloudflare Functions 側の ID トークン検証まで実装済みです。現時点の残課題は、本番デプロイへの反映確認と実環境データでの最終検証です。
+2026-04-09 に本番デプロイ・実データ検証を完了。GAS コールドスタートによるタイムアウト問題を修正済み（PR #73）。
 
 ---
 
