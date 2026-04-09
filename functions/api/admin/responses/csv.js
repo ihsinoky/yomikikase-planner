@@ -1,4 +1,4 @@
-import { corsPreflightResponse } from '../../../_shared/headers.js';
+import { corsPreflightResponse, CORS_HEADERS, SECURITY_HEADERS } from '../../../_shared/headers.js';
 import { callGas, createGasConfigErrorResponse } from '../../../_shared/gas.js';
 import { verifyAdminAuth } from '../../../_shared/admin-auth.js';
 import { jsonResponse } from '../../../_shared/headers.js';
@@ -16,11 +16,19 @@ const CSV_COLUMNS = [
 function escapeCsvField(value) {
   const str = String(value || '');
 
-  if (str.includes(',') || str.includes('"') || str.includes('\n')) {
-    return '"' + str.replace(/"/g, '""') + '"';
+  // Neutralize formula injection: prefix with single quote if starts with =, +, -, @
+  const safe = /^[=+\-@]/.test(str) ? "'" + str : str;
+
+  if (
+    safe.includes(',') ||
+    safe.includes('"') ||
+    safe.includes('\n') ||
+    safe.includes('\r')
+  ) {
+    return '"' + safe.replace(/"/g, '""') + '"';
   }
 
-  return str;
+  return safe;
 }
 
 function responsesToCsv(responses) {
@@ -64,8 +72,10 @@ export async function onRequestGet({ request, env }) {
 
     const responses = gasResult.data.responses || [];
     const csv = responsesToCsv(responses);
-    const filename = surveyId
-      ? 'responses-' + surveyId + '.csv'
+    // Sanitize surveyId for Content-Disposition filename (allow only alphanumeric, hyphen, underscore)
+    const safeSurveyId = surveyId.replace(/[^a-zA-Z0-9_-]/g, '_');
+    const filename = safeSurveyId
+      ? 'responses-' + safeSurveyId + '.csv'
       : 'responses-all.csv';
 
     return new Response(csv, {
@@ -73,7 +83,8 @@ export async function onRequestGet({ request, env }) {
       headers: {
         'Content-Type': 'text/csv; charset=utf-8',
         'Content-Disposition': 'attachment; filename="' + filename + '"',
-        'Access-Control-Allow-Origin': '*',
+        ...CORS_HEADERS,
+        ...SECURITY_HEADERS,
       },
     });
   } catch (error) {
